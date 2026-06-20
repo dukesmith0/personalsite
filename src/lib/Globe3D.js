@@ -35,8 +35,8 @@ const SECTIONS = [
   { craft: "comms", entry: [1.35, 0.62], exit: [-1.35, 0.42], depth: 2.0 }, // hero
   { craft: "comms", entry: [-1.35, 0.72], exit: [1.1, 0.18], depth: 1.9 }, // about
   { craft: "cube", entry: [1.35, 0.6], exit: [-1.35, 0.5], depth: 1.7 }, // projects (close)
-  { craft: "eo", entry: [-1.2, 0.62], exit: [1.2, 0.42], depth: 1.9 }, // experience
-  { craft: "comms", entry: [-1.1, 0.5], exit: [1.35, 0.72], depth: 2.0 }, // contact (departs)
+  { craft: "eo", entry: [-1.2, 0.62], exit: [1.2, 0.42], depth: 1.9 }, // experience (from left)
+  { craft: "comms", entry: [1.3, 0.5], exit: [-1.1, 0.74], depth: 2.0 }, // contact (from right, departs)
 ];
 
 const EARTH_SPIN = Math.PI * 2 * 1.25; // ~1.25 turns of Earth across the page
@@ -297,8 +297,10 @@ export class Globe3D {
     this.earth.rotation.y = this.eased * EARTH_SPIN + time * 0.000015;
     this.stars.rotation.y += 0.00008;
 
-    // orbit trail draws progressively with scroll
-    this.trail.geometry.setDrawRange(0, Math.max(2, Math.floor(this.eased * this._trailMax)));
+    // orbit trail draws progressively with scroll (hidden until it has length)
+    const tc = Math.floor(this.eased * this._trailMax);
+    this.trail.visible = tc > 4;
+    this.trail.geometry.setDrawRange(0, Math.max(2, tc));
 
     this._placeSatellite(this.eased);
 
