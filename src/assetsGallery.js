@@ -7,17 +7,9 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import "./styles/assets.css";
-import { createCommsSat } from "./lib/satelliteModel.js";
-import {
-  createSaturnV,
-  createSputnik,
-  createManholeCover,
-  createJWST,
-  createVoyager,
-  createSolarSail,
-  createSpaceShuttle,
-} from "./lib/objects.js";
-import { applyChrome, applyToon } from "./lib/styles.js";
+import { createManholeCover, createJWST, createVoyager, createSolarSail } from "./lib/objects.js";
+import { applyToon } from "./lib/styles.js";
+import { loadModel } from "./lib/loadModel.js";
 
 const canvas = document.getElementById("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -57,22 +49,17 @@ grid.material.transparent = true;
 grid.material.opacity = 0.5;
 scene.add(grid);
 
-// objects laid out in a grid on the floor
-const sat = createCommsSat({ accent: "#ff6a3d" });
-sat.scale.setScalar(2.0);
-const chromeSat = applyChrome(createCommsSat({ accent: "#ff6a3d" }));
-chromeSat.scale.setScalar(2.0);
-
+// gallery items: real GLB models + a few procedural / styled experiments
 const items = [
-  { name: "Comms Satellite", obj: sat, y: 0 },
-  { name: "Saturn V", obj: createSaturnV(), y: 0.3 },
-  { name: "Sputnik 1", obj: createSputnik(), y: 0 },
+  { name: "Space Satellite", model: "/models/space_satellite.glb", fit: 2.0, y: 0 },
+  { name: "Saturn V", model: "/models/saturn_v.glb", fit: 2.8, y: 0.3 },
+  { name: "Sputnik 1", model: "/models/sputnik_1.glb", fit: 1.6, y: 0 },
+  { name: "Space Shuttle", model: "/models/space_shuttle.glb", fit: 2.2, y: 0 },
+  { name: "CubeSat", model: "/models/space_club_cubesat.glb", fit: 1.4, y: 0 },
   { name: "Manhole Cover", obj: createManholeCover(), y: -1.2 },
   { name: "James Webb", obj: createJWST(), y: 0 },
   { name: "Voyager", obj: createVoyager(), y: 0 },
   { name: "Solar Sail", obj: createSolarSail(), y: 0 },
-  { name: "Space Shuttle", obj: createSpaceShuttle(), y: 0 },
-  { name: "Satellite / Chrome", obj: chromeSat, y: 0 },
   { name: "JWST / Toon", obj: applyToon(createJWST()), y: 0 },
 ];
 
@@ -81,17 +68,30 @@ const spacing = 3.6;
 const cols = 5;
 const rowGap = 4.0;
 const startX = -((cols - 1) * spacing) / 2;
+
 items.forEach((it, i) => {
   const col = i % cols;
   const row = Math.floor(i / cols);
-  it.obj.position.set(startX + col * spacing, it.y, -row * rowGap);
-  scene.add(it.obj);
+  it.pos = new THREE.Vector3(startX + col * spacing, it.y, -row * rowGap);
+  it.anchor = new THREE.Vector3();
   const el = document.createElement("div");
   el.className = "obj-label";
   el.textContent = it.name;
   labelLayer.appendChild(el);
   it.label = el;
-  it.anchor = new THREE.Vector3();
+
+  if (it.obj) {
+    it.obj.position.copy(it.pos);
+    scene.add(it.obj);
+  } else if (it.model) {
+    loadModel(it.model, { fit: it.fit })
+      .then((obj) => {
+        obj.position.copy(it.pos);
+        scene.add(obj);
+        it.obj = obj;
+      })
+      .catch((err) => console.error("Failed to load", it.model, err));
+  }
 });
 
 // frame the whole grid
@@ -114,6 +114,10 @@ renderer.setAnimationLoop(() => {
   const t = clock.elapsedTime;
 
   for (const it of items) {
+    if (!it.obj) {
+      it.label.style.opacity = "0"; // not loaded yet
+      continue;
+    }
     it.obj.rotation.y += (it.obj.userData.spin ?? 0.3) * dt;
 
     // flame flicker for the booster
