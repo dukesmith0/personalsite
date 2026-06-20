@@ -1,7 +1,7 @@
 {
   "name": "duke-smith-portfolio",
   "version": "1.0.0",
-  "description": "Cinematic scroll-driven portfolio — a 3D satellite orbiting a stylized globe.",
+  "description": "Cinematic scroll-driven portfolio: a 3D satellite orbiting a stylized globe.",
   "type": "module",
   "private": true,
   "scripts": {

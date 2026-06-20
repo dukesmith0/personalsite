@@ -17,15 +17,37 @@ import { makeGlowTexture } from "./glow.js";
 const smoothstep = (x) => x * x * (3 - 2 * x);
 const lerp = (a, b, t) => a + (b - a) * t;
 
-// One camera keyframe per content section. Spherical coords around the globe.
-// [ radius, polar(from +Y), azimuth ]
+// Dynamic "dawn pass" camera move, one keyframe per section.
+// [ radius, polar(from +Y), azimuth ]  (Earth stays centered)
 const KEYS = [
-  [3.6, 1.45, 0.4], // hero
-  [3.0, 1.18, 1.5], // about
-  [3.7, 1.55, 2.7], // projects
-  [3.1, 0.98, 3.9], // experience
-  [2.7, 1.4, 5.1], // contact
+  [4.1, 1.5, 0.2], // hero: wide establishing
+  [3.0, 1.2, 1.0], // about: push in + rise
+  [3.2, 1.66, 1.95], // projects: dip to skim the limb
+  [4.4, 1.14, 3.0], // experience: pull back to reveal
+  [2.7, 1.5, 3.8], // contact: close on the horizon
 ];
+
+// Satellite screen anchor per section: [ ndcX(-1..1), ndcY(-1..1), depthFromCamera ].
+// The satellite is pinned to this zone of the frame so it never leaves the shot,
+// placed in negative space away from the copy in each section.
+const SAT_ANCHORS = [
+  [0.55, 0.48, 1.9], // hero: upper right
+  [0.0, 0.66, 1.9], // about: top center (clears left copy + right portrait)
+  [0.46, 0.55, 1.9], // projects: upper right (clears bottom cards)
+  [-0.5, 0.58, 2.0], // experience: upper left
+  [0.42, 0.56, 1.8], // contact: upper right
+];
+
+// Sample a list of [a,b,c] keyframes at progress p with eased segments.
+function sample(keys, p) {
+  const segs = keys.length - 1;
+  const t = Math.max(0, Math.min(1, p)) * segs;
+  const i = Math.min(segs - 1, Math.floor(t));
+  const f = smoothstep(t - i);
+  const a = keys[i];
+  const b = keys[i + 1];
+  return [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)];
+}
 
 // Freeze an object's local matrix: it never moves, so stop recomputing it.
 function freeze(obj) {
@@ -45,7 +67,9 @@ export class Globe3D {
     this._benchAccum = 0;
     this._benchCount = 0;
     this._satV = new THREE.Vector3();
-    this._xAxis = new THREE.Vector3(1, 0, 0);
+    this._sunDir = new THREE.Vector3(-4, 2, 3).normalize();
+    this._sunLocal = new THREE.Vector3();
+    this._quatInv = new THREE.Quaternion();
 
     this._tick = this._tick.bind(this);
     this._onResize = () => this.resize();
@@ -76,12 +100,13 @@ export class Globe3D {
   }
 
   _build() {
-    // Dawn lighting: a warm "sun" key for a crisp terminator + cool fill.
+    // Dawn lighting: a warm "sun" key for a crisp terminator + a deep cool fill
+    // so the shadow side reads cold against the warm lit limb.
     // (2 lights only: every extra light adds a per-fragment loop iteration.)
-    const sun = new THREE.DirectionalLight(0xffe7cf, 2.8);
-    sun.position.set(-4, 2, 3);
+    const sun = new THREE.DirectionalLight(0xffdcb8, 3.1);
+    sun.position.copy(this._sunDir);
     this.scene.add(sun);
-    this.scene.add(new THREE.AmbientLight(0x33415e, 0.85));
+    this.scene.add(new THREE.AmbientLight(0x28374f, 0.65));
 
     // exponential fog: depth cueing + hides far-side detail (near free)
     this.scene.fog = new THREE.FogExp2(0x06070d, 0.16);
@@ -92,25 +117,10 @@ export class Globe3D {
     this.earth.children.forEach(freeze);
     this.scene.add(this.earth);
 
-    // satellite (its parts are frozen inside createSatellite)
+    // satellite (its parts are frozen inside createSatellite). It is screen
+    // anchored each frame (see _placeSatellite), not riding a fixed orbit.
     this.sat = createSatellite({ accent: "#ff6a3d" });
     this.scene.add(this.sat);
-    this.orbitRadius = 1.55;
-    this.orbitTilt = 0.62;
-
-    // faint orbit ring (static)
-    const ringPts = [];
-    for (let i = 0; i <= 128; i++) {
-      const a = (i / 128) * Math.PI * 2;
-      ringPts.push(new THREE.Vector3(Math.cos(a) * this.orbitRadius, 0, Math.sin(a) * this.orbitRadius));
-    }
-    const ring = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(ringPts),
-      new THREE.LineBasicMaterial({ color: 0xff6a3d, transparent: true, opacity: 0.18 })
-    );
-    ring.rotation.x = this.orbitTilt;
-    freeze(ring);
-    this.scene.add(ring);
 
     // parallax starfield (sparse; fog disabled so distant stars stay visible)
     const N = 360;
@@ -140,46 +150,50 @@ export class Globe3D {
     );
     this.scene.add(this.stars);
 
-    // sun-glint sprite on the lit limb (fake bloom, one additive quad)
-    const glint = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: makeGlowTexture(),
-        color: 0xffd9a8,
-        blending: THREE.AdditiveBlending,
-        transparent: true,
-        depthWrite: false,
-        opacity: 0.85,
-      })
-    );
-    glint.position.copy(new THREE.Vector3(-4, 2, 3).normalize().multiplyScalar(1.04));
-    glint.scale.setScalar(0.7);
-    freeze(glint);
-    this.scene.add(glint);
+    // Distant sun: a far halo + bright core in the sun's direction. depthTest
+    // lets the Earth occlude it, so it flares at the limb instead of sitting on
+    // the surface. fog disabled so the distance does not fog it away.
+    const sunSprite = (color, dist, size, opacity) => {
+      const s = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: makeGlowTexture(),
+          color,
+          blending: THREE.AdditiveBlending,
+          transparent: true,
+          depthWrite: false,
+          fog: false,
+          opacity,
+        })
+      );
+      s.position.copy(this._sunDir).multiplyScalar(dist);
+      s.scale.setScalar(size);
+      freeze(s);
+      this.scene.add(s);
+    };
+    sunSprite(0xffd49a, 6, 2.6, 0.85); // soft warm halo
+    sunSprite(0xfff2d6, 6, 0.95, 1.0); // bright core
   }
 
   setProgress(p) {
     this.progress = Math.max(0, Math.min(1, p));
   }
 
-  _sampleCamera(p) {
-    const segs = KEYS.length - 1;
-    const t = p * segs;
-    const i = Math.min(segs - 1, Math.floor(t));
-    const f = smoothstep(t - i);
-    const a = KEYS[i];
-    const b = KEYS[i + 1];
-    return [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)];
-  }
-
   _placeSatellite(p) {
-    const ang = p * Math.PI * 2 * 1.6 + 0.6; // ~1.6 orbits across the page
-    this._satV
-      .set(Math.cos(ang) * this.orbitRadius, 0, Math.sin(ang) * this.orbitRadius)
-      .applyAxisAngle(this._xAxis, this.orbitTilt);
+    // Screen anchor: pin the satellite to a target zone of the frame so it can
+    // never leave the shot. Unproject the anchor NDC into a world point at a
+    // fixed depth in front of the camera (camera matrices are current here).
+    const [ax, ay, depth] = sample(SAT_ANCHORS, p);
+    this._satV.set(ax, ay, 0.5).unproject(this.camera);
+    this._satV.sub(this.camera.position).normalize().multiplyScalar(depth).add(this.camera.position);
     this.sat.position.copy(this._satV);
-    // keep the satellite oriented along its track, nadir toward Earth
+    // +Z (dish + antenna) points at Earth center: nadir-pointing bus
     this.sat.lookAt(0, 0, 0);
-    this.sat.rotateY(Math.PI / 2);
+    // single-axis sun tracking for the solar wings (panel normal is local +Y)
+    const wings = this.sat.userData.wings;
+    if (wings) {
+      this._sunLocal.copy(this._sunDir).applyQuaternion(this._quatInv.copy(this.sat.quaternion).invert());
+      wings.rotation.x = Math.atan2(this._sunLocal.z, this._sunLocal.y);
+    }
   }
 
   resize() {
@@ -201,6 +215,7 @@ export class Globe3D {
 
   stop() {
     this.running = false;
+    this._lastTime = null; // avoid a stale multi-second dt on resume
     this.renderer.setAnimationLoop(null);
   }
 
@@ -228,7 +243,7 @@ export class Globe3D {
     this.eased += (this.progress - this.eased) * 0.2;
 
     // camera from scroll keyframes + a subtle perpetual float (handheld feel)
-    const [r, polar, az] = this._sampleCamera(this.eased);
+    const [r, polar, az] = sample(KEYS, this.eased);
     const t = time * 0.001;
     const fAz = Math.sin(t * 0.17) * 0.03;
     const fPolar = Math.cos(t * 0.13) * 0.022;
@@ -238,6 +253,7 @@ export class Globe3D {
       r * Math.sin(polar + fPolar) * Math.sin(az + fAz)
     );
     this.camera.lookAt(0, 0, 0);
+    this.camera.updateMatrixWorld(); // so the satellite anchor unproject is current
 
     // always-on slow motion so the scene never looks frozen (cheap)
     this.earth.rotation.y += 0.0006;

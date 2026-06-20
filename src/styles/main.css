@@ -64,7 +64,8 @@ img { display: block; max-width: 100%; }
 /* ---------- shared layout ---------- */
 .wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: var(--gutter); }
 main { position: relative; z-index: 2; }
-section { position: relative; min-height: 100vh; display: flex; align-items: center; padding-block: var(--s-6); contain: layout paint; }
+/* contain: layout only - NOT paint, which would hard-clip the soft scrims */
+section { position: relative; min-height: 100vh; display: flex; align-items: center; padding-block: var(--s-6); contain: layout; }
 
 .kicker {
   font-family: var(--font-label);
@@ -120,15 +121,16 @@ p + p { margin-top: var(--s-2); }
   text-shadow: 0 2px 24px rgba(4, 6, 12, 0.6);
 }
 
-/* soft content scrim behind text-heavy sections so copy reads over the globe */
-.about .wrap, .experience .wrap, .contact .wrap { position: relative; }
-.about .wrap::before, .experience .wrap::before, .contact .wrap::before {
+/* soft content scrim behind text-heavy sections so copy reads over the globe.
+   Large inset + gentle falloff = no visible edge (a true vignette, not a box). */
+.about .wrap, .experience .wrap, .contact .wrap, .projects .wrap { position: relative; }
+.about .wrap::before, .experience .wrap::before, .contact .wrap::before, .projects .wrap::before {
   content: "";
   position: absolute;
-  inset: -14% -10%;
+  inset: -45% -30%;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(92% 82% at 50% 50%, rgba(4, 6, 12, 0.78) 0%, rgba(4, 6, 12, 0.52) 55%, transparent 86%);
+  background: radial-gradient(70% 60% at 50% 50%, rgba(4, 6, 12, 0.72) 0%, rgba(4, 6, 12, 0.4) 40%, transparent 72%);
 }
 .xp .what h3, .xp .what .org, .xp .what p, .xp .when { text-shadow: 0 1px 18px rgba(4, 6, 12, 0.7); }
 .xp .what p { color: #aab3c2; }
