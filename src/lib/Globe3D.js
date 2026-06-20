@@ -11,7 +11,8 @@
 // ---------------------------------------------------------------------------
 import * as THREE from "three";
 import { createEarth } from "./earth.js";
-import { createCommsSat, createCubeSat, createEOSat } from "./satelliteModel.js";
+import { createManholeCover } from "./objects.js";
+import { loadModel, initLoader } from "./loadModel.js";
 import { makeGlowTexture } from "./glow.js";
 
 const smoothstep = (x) => x * x * (3 - 2 * x);
@@ -27,16 +28,17 @@ const KEYS = [
   [2.7, 1.5, 3.8], // contact: close on the horizon
 ];
 
-// Per-section orbital pass. Each section shows one craft sweeping across the
-// frame from `entry` to `exit` (NDC, off-frame at the ends so swaps are hidden),
-// at `depth` in front of the camera. The craft moves relative to Earth as it
-// crosses, reading as an orbital pass; a new craft enters next section.
+// Per-section object pass. The hero (index 0) shows NO object. Each later
+// section reveals a different object sweeping across the frame from `entry` to
+// `exit` (NDC, off-frame at the ends so swaps are hidden) at `depth` in front
+// of the camera, with its own tilt + tumble so each pass feels distinct and you
+// read it as moving between different objects.
 const SECTIONS = [
-  { craft: "comms", entry: [1.35, 0.62], exit: [-1.35, 0.42], depth: 2.0 }, // hero
-  { craft: "comms", entry: [-1.35, 0.72], exit: [1.1, 0.18], depth: 1.9 }, // about
-  { craft: "cube", entry: [1.35, 0.6], exit: [-1.35, 0.5], depth: 1.7 }, // projects (close)
-  { craft: "eo", entry: [-1.2, 0.62], exit: [1.2, 0.42], depth: 1.9 }, // experience (from left)
-  { craft: "comms", entry: [1.3, 0.5], exit: [-1.1, 0.74], depth: 2.0 }, // contact (from right, departs)
+  null, // hero: no object, just the title + globe
+  { model: "/models/lowpoly/low_poly_satellite.glb", fit: 0.55, entry: [-1.35, 0.72], exit: [1.2, 0.2], depth: 1.9, tilt: 0.35, spin: 0.012 }, // about
+  { model: "/models/lowpoly/space_retro_sputnik.glb", fit: 0.45, entry: [1.35, 0.5], exit: [-1.3, 0.6], depth: 1.6, tilt: 0.2, spin: 0.02 }, // projects
+  { model: "/models/lowpoly/low_poly_space_shuttle.glb", fit: 0.72, entry: [-1.2, 0.18], exit: [1.25, 0.72], depth: 2.0, tilt: 0.15, spin: 0.008 }, // experience
+  { manhole: true, fit: 0.42, entry: [1.3, 0.52], exit: [-1.15, 0.74], depth: 1.8, tilt: 0.5, spin: 0.02 }, // contact (last)
 ];
 
 const EARTH_SPIN = Math.PI * 2 * 1.25; // ~1.25 turns of Earth across the page
@@ -71,8 +73,6 @@ export class Globe3D {
     this._benchCount = 0;
     this._satV = new THREE.Vector3();
     this._sunDir = new THREE.Vector3(-4, 2, 3).normalize();
-    this._sunLocal = new THREE.Vector3();
-    this._quatInv = new THREE.Quaternion();
 
     this._tick = this._tick.bind(this);
     this._onResize = () => this.resize();
@@ -120,34 +120,37 @@ export class Globe3D {
     this.earth.children.forEach(freeze);
     this.scene.add(this.earth);
 
-    // One craft per section. All are added once; only the active one is shown.
-    this.crafts = {
-      comms: createCommsSat({ accent: "#ff6a3d" }),
-      cube: createCubeSat({ accent: "#ff6a3d" }),
-      eo: createEOSat({ accent: "#ff6a3d" }),
-    };
-    for (const k in this.crafts) {
-      this.crafts[k].visible = false;
-      this.scene.add(this.crafts[k]);
-    }
-
-    // Orbit trail: a tilted ring that draws progressively with scroll, paying
-    // off as the "trajectory" in the Experience section.
-    const M = 220;
-    const tp = [];
-    for (let i = 0; i <= M; i++) {
-      const a = (i / M) * Math.PI * 2;
-      tp.push(new THREE.Vector3(Math.cos(a) * 1.62, 0, Math.sin(a) * 1.62));
-    }
-    this.trail = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(tp),
-      new THREE.LineBasicMaterial({ color: 0xff8a4d, transparent: true, opacity: 0.32 })
-    );
-    this.trail.rotation.x = 0.5;
-    this.trail.geometry.setDrawRange(0, 2);
-    this._trailMax = M + 1;
-    freeze(this.trail);
-    this.scene.add(this.trail);
+    // One object per section (hero has none). Loaded async, shown on demand.
+    initLoader(this.renderer); // enable KTX2 textures if a model uses them
+    this.crafts = {};
+    SECTIONS.forEach((cfg, i) => {
+      if (!cfg) return;
+      if (cfg.manhole) {
+        const m = createManholeCover();
+        m.scale.setScalar(cfg.fit);
+        m.rotation.x = cfg.tilt;
+        m.visible = false;
+        this.crafts[i] = m;
+        this.scene.add(m);
+      } else {
+        loadModel(cfg.model, { fit: cfg.fit })
+          .then((obj) => {
+            obj.traverse((o) => {
+              if (!o.isMesh || !o.material) return;
+              const mats = Array.isArray(o.material) ? o.material : [o.material];
+              for (const m of mats) {
+                m.flatShading = true; // crisp low-poly facets
+                m.needsUpdate = true;
+              }
+            });
+            obj.rotation.x = cfg.tilt;
+            obj.visible = false;
+            this.crafts[i] = obj;
+            this.scene.add(obj);
+          })
+          .catch((e) => console.error("craft load failed", cfg.model, e));
+      }
+    });
 
     // parallax starfield (sparse; fog disabled so distant stars stay visible)
     const N = 360;
@@ -206,31 +209,26 @@ export class Globe3D {
   }
 
   _placeSatellite(p) {
-    // Which section are we in, and how far across it (0..1)?
     const segs = SECTIONS.length;
     const fi = Math.min(segs - 1, Math.floor(p * segs));
-    const localT = Math.min(1, Math.max(0, p * segs - fi));
+
+    // hide everything, then reveal the active section's object (if any/loaded)
+    for (const k in this.crafts) this.crafts[k].visible = false;
     const cfg = SECTIONS[fi];
+    if (!cfg) return; // hero: no object
+    const sat = this.crafts[fi];
+    if (!sat) return; // model still loading
+    sat.visible = true;
 
-    // show only the active craft (others are off-frame at the swap anyway)
-    for (const k in this.crafts) this.crafts[k].visible = k === cfg.craft;
-    const sat = this.crafts[cfg.craft];
-
-    // the craft crosses the frame entry -> exit (an orbital pass). Anchor is a
-    // screen NDC unprojected to a world point at the section's depth.
+    // the object crosses the frame entry -> exit (a pass). Anchor is a screen
+    // NDC unprojected to a world point at the section's depth.
+    const localT = Math.min(1, Math.max(0, p * segs - fi));
     const ax = lerp(cfg.entry[0], cfg.exit[0], localT);
     const ay = lerp(cfg.entry[1], cfg.exit[1], localT);
     this._satV.set(ax, ay, 0.5).unproject(this.camera);
     this._satV.sub(this.camera.position).normalize().multiplyScalar(cfg.depth).add(this.camera.position);
     sat.position.copy(this._satV);
-    // +Z (dish/instrument) points at Earth center: nadir-pointing bus
-    sat.lookAt(0, 0, 0);
-    // single-axis sun tracking for the solar wings (panel normal is local +Y)
-    const wings = sat.userData.wings;
-    if (wings) {
-      this._sunLocal.copy(this._sunDir).applyQuaternion(this._quatInv.copy(sat.quaternion).invert());
-      wings.rotation.x = Math.atan2(this._sunLocal.z, this._sunLocal.y);
-    }
+    sat.rotation.y += cfg.spin; // gentle tumble as it passes
   }
 
   resize() {
@@ -296,11 +294,6 @@ export class Globe3D {
     // craft (reads as orbiting); a tiny time term keeps it alive when idle.
     this.earth.rotation.y = this.eased * EARTH_SPIN + time * 0.000015;
     this.stars.rotation.y += 0.00008;
-
-    // orbit trail draws progressively with scroll (hidden until it has length)
-    const tc = Math.floor(this.eased * this._trailMax);
-    this.trail.visible = tc > 4;
-    this.trail.geometry.setDrawRange(0, Math.max(2, tc));
 
     this._placeSatellite(this.eased);
 
