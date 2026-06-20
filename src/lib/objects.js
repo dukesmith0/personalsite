@@ -135,13 +135,6 @@ export function createManholeCover() {
     groove.rotation.y = -a;
     g.add(groove);
   }
-  // launch streak
-  const streak = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5, 3.0, 0.02),
-    new THREE.MeshBasicMaterial({ color: 0xfff2d8, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false })
-  );
-  streak.position.y = 1.4;
-  g.add(streak);
   g.userData.spin = 0.15;
   return g;
 }

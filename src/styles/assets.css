@@ -25,6 +25,13 @@ body {
 }
 
 #labels { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
+.section-label {
+  position: absolute; top: 0; left: 0;
+  font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; letter-spacing: 0.02em;
+  color: var(--ink); white-space: nowrap; padding: 6px 18px 8px;
+  border-bottom: 1px solid var(--accent); background: rgba(8, 11, 18, 0.45);
+  transition: opacity 0.2s;
+}
 .obj-label {
   position: absolute; top: 0; left: 0;
   font-family: var(--font-label); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
