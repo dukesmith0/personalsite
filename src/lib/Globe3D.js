@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------
 import * as THREE from "three";
 import { createEarth } from "./earth.js";
-import { createSatellite } from "./satelliteModel.js";
+import { createCommsSat, createCubeSat, createEOSat } from "./satelliteModel.js";
 import { makeGlowTexture } from "./glow.js";
 
 const smoothstep = (x) => x * x * (3 - 2 * x);
@@ -27,16 +27,19 @@ const KEYS = [
   [2.7, 1.5, 3.8], // contact: close on the horizon
 ];
 
-// Satellite screen anchor per section: [ ndcX(-1..1), ndcY(-1..1), depthFromCamera ].
-// The satellite is pinned to this zone of the frame so it never leaves the shot,
-// placed in negative space away from the copy in each section.
-const SAT_ANCHORS = [
-  [0.55, 0.48, 1.9], // hero: upper right
-  [0.0, 0.66, 1.9], // about: top center (clears left copy + right portrait)
-  [0.46, 0.55, 1.9], // projects: upper right (clears bottom cards)
-  [-0.5, 0.58, 2.0], // experience: upper left
-  [0.42, 0.56, 1.8], // contact: upper right
+// Per-section orbital pass. Each section shows one craft sweeping across the
+// frame from `entry` to `exit` (NDC, off-frame at the ends so swaps are hidden),
+// at `depth` in front of the camera. The craft moves relative to Earth as it
+// crosses, reading as an orbital pass; a new craft enters next section.
+const SECTIONS = [
+  { craft: "comms", entry: [1.35, 0.62], exit: [-1.35, 0.42], depth: 2.0 }, // hero
+  { craft: "comms", entry: [-1.35, 0.72], exit: [1.1, 0.18], depth: 1.9 }, // about
+  { craft: "cube", entry: [1.35, 0.6], exit: [-1.35, 0.5], depth: 1.7 }, // projects (close)
+  { craft: "eo", entry: [-1.2, 0.62], exit: [1.2, 0.42], depth: 1.9 }, // experience
+  { craft: "comms", entry: [-1.1, 0.5], exit: [1.35, 0.72], depth: 2.0 }, // contact (departs)
 ];
+
+const EARTH_SPIN = Math.PI * 2 * 1.25; // ~1.25 turns of Earth across the page
 
 // Sample a list of [a,b,c] keyframes at progress p with eased segments.
 function sample(keys, p) {
@@ -117,10 +120,34 @@ export class Globe3D {
     this.earth.children.forEach(freeze);
     this.scene.add(this.earth);
 
-    // satellite (its parts are frozen inside createSatellite). It is screen
-    // anchored each frame (see _placeSatellite), not riding a fixed orbit.
-    this.sat = createSatellite({ accent: "#ff6a3d" });
-    this.scene.add(this.sat);
+    // One craft per section. All are added once; only the active one is shown.
+    this.crafts = {
+      comms: createCommsSat({ accent: "#ff6a3d" }),
+      cube: createCubeSat({ accent: "#ff6a3d" }),
+      eo: createEOSat({ accent: "#ff6a3d" }),
+    };
+    for (const k in this.crafts) {
+      this.crafts[k].visible = false;
+      this.scene.add(this.crafts[k]);
+    }
+
+    // Orbit trail: a tilted ring that draws progressively with scroll, paying
+    // off as the "trajectory" in the Experience section.
+    const M = 220;
+    const tp = [];
+    for (let i = 0; i <= M; i++) {
+      const a = (i / M) * Math.PI * 2;
+      tp.push(new THREE.Vector3(Math.cos(a) * 1.62, 0, Math.sin(a) * 1.62));
+    }
+    this.trail = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(tp),
+      new THREE.LineBasicMaterial({ color: 0xff8a4d, transparent: true, opacity: 0.32 })
+    );
+    this.trail.rotation.x = 0.5;
+    this.trail.geometry.setDrawRange(0, 2);
+    this._trailMax = M + 1;
+    freeze(this.trail);
+    this.scene.add(this.trail);
 
     // parallax starfield (sparse; fog disabled so distant stars stay visible)
     const N = 360;
@@ -179,19 +206,29 @@ export class Globe3D {
   }
 
   _placeSatellite(p) {
-    // Screen anchor: pin the satellite to a target zone of the frame so it can
-    // never leave the shot. Unproject the anchor NDC into a world point at a
-    // fixed depth in front of the camera (camera matrices are current here).
-    const [ax, ay, depth] = sample(SAT_ANCHORS, p);
+    // Which section are we in, and how far across it (0..1)?
+    const segs = SECTIONS.length;
+    const fi = Math.min(segs - 1, Math.floor(p * segs));
+    const localT = Math.min(1, Math.max(0, p * segs - fi));
+    const cfg = SECTIONS[fi];
+
+    // show only the active craft (others are off-frame at the swap anyway)
+    for (const k in this.crafts) this.crafts[k].visible = k === cfg.craft;
+    const sat = this.crafts[cfg.craft];
+
+    // the craft crosses the frame entry -> exit (an orbital pass). Anchor is a
+    // screen NDC unprojected to a world point at the section's depth.
+    const ax = lerp(cfg.entry[0], cfg.exit[0], localT);
+    const ay = lerp(cfg.entry[1], cfg.exit[1], localT);
     this._satV.set(ax, ay, 0.5).unproject(this.camera);
-    this._satV.sub(this.camera.position).normalize().multiplyScalar(depth).add(this.camera.position);
-    this.sat.position.copy(this._satV);
-    // +Z (dish + antenna) points at Earth center: nadir-pointing bus
-    this.sat.lookAt(0, 0, 0);
+    this._satV.sub(this.camera.position).normalize().multiplyScalar(cfg.depth).add(this.camera.position);
+    sat.position.copy(this._satV);
+    // +Z (dish/instrument) points at Earth center: nadir-pointing bus
+    sat.lookAt(0, 0, 0);
     // single-axis sun tracking for the solar wings (panel normal is local +Y)
-    const wings = this.sat.userData.wings;
+    const wings = sat.userData.wings;
     if (wings) {
-      this._sunLocal.copy(this._sunDir).applyQuaternion(this._quatInv.copy(this.sat.quaternion).invert());
+      this._sunLocal.copy(this._sunDir).applyQuaternion(this._quatInv.copy(sat.quaternion).invert());
       wings.rotation.x = Math.atan2(this._sunLocal.z, this._sunLocal.y);
     }
   }
@@ -255,9 +292,14 @@ export class Globe3D {
     this.camera.lookAt(0, 0, 0);
     this.camera.updateMatrixWorld(); // so the satellite anchor unproject is current
 
-    // always-on slow motion so the scene never looks frozen (cheap)
-    this.earth.rotation.y += 0.0006;
+    // Earth rotation is driven by scroll so the surface streams beneath the
+    // craft (reads as orbiting); a tiny time term keeps it alive when idle.
+    this.earth.rotation.y = this.eased * EARTH_SPIN + time * 0.000015;
     this.stars.rotation.y += 0.00008;
+
+    // orbit trail draws progressively with scroll
+    this.trail.geometry.setDrawRange(0, Math.max(2, Math.floor(this.eased * this._trailMax)));
+
     this._placeSatellite(this.eased);
 
     this.renderer.render(this.scene, this.camera);
