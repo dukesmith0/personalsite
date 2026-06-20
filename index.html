@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Duke Smith — Aerospace · Satellite Instrumentation</title>
+<meta name="description" content="Duke Smith — aerospace engineer working on satellite instrumentation. UCLA." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300;400;600;700;800&family=B612+Mono:wght@400;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+<canvas id="globe"></canvas>
+
+<div id="boot">ACQUIRING SIGNAL…</div>
+
+<header class="brand">
+  <div class="name"><span class="dot"></span>DUKE SMITH</div>
+  <div class="sub">AEROSPACE · SATELLITE INSTRUMENTATION</div>
+</header>
+
+<nav>
+  <a href="#about">About</a>
+  <a href="#projects">Projects</a>
+  <a href="#experience">Experience</a>
+  <a class="cta" href="#contact">Contact</a>
+</nav>
+
+<div class="passband"><span class="live"></span><span id="passText">TRACKING</span></div>
+
+<section class="hero" id="projects">
+  <div class="eyebrow swap" id="projEyebrow">PROJECT 01 / 02</div>
+  <h1 class="swap" id="projTitle"></h1>
+  <p class="swap" id="projBody"></p>
+  <div class="tags swap" id="projTags"></div>
+  <div class="proj-nav">
+    <button id="prev" aria-label="previous project">‹</button>
+    <span class="counter">PROJECT <b id="projNum">01</b> — <span id="projOf">02</span></span>
+    <button id="next" aria-label="next project">›</button>
+  </div>
+</section>
+
+<aside class="telemetry" aria-hidden="true">
+  <div class="ttl">▸ LIVE TELEMETRY</div>
+  <div class="row"><span class="k">LAT</span><span class="v"><span id="tLat">—</span><small>°</small></span></div>
+  <div class="row"><span class="k">LON</span><span class="v"><span id="tLon">—</span><small>°</small></span></div>
+  <div class="row"><span class="k">ALT</span><span class="v"><span id="tAlt">—</span><small>km</small></span></div>
+  <div class="row"><span class="k">VEL</span><span class="v"><span id="tVel">—</span><small>km/s</small></span></div>
+  <div class="row"><span class="k">PERIOD</span><span class="v"><span id="tPer">—</span><small>min</small></span></div>
+</aside>
+
+<aside class="station" aria-hidden="true">
+  <div class="ttl">▸ GROUND STATION</div>
+  <div class="gs">
+    <span class="name">UCLA · LOS ANGELES</span>
+    <span class="sig" id="gsSig">ACQUIRING</span>
+  </div>
+  <div class="look">
+    <div>AZ<b id="gAz">—</b></div>
+    <div>EL<b id="gEl">—</b></div>
+    <div>RANGE<b id="gRng">—</b></div>
+  </div>
+</aside>
+
+<div class="note">SGP4 PROPAGATION FROM PUBLISHED TLE · ILLUSTRATIVE</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
