@@ -43,12 +43,19 @@ export function createSaturnV() {
   tower.position.y = y + 0.46;
   g.add(tower);
 
-  // four fins at the base
+  // four triangular fins pointing radially outward
+  const finShape = new THREE.Shape();
+  finShape.moveTo(0, 0.2);
+  finShape.lineTo(0, -0.3);
+  finShape.lineTo(0.28, -0.3);
+  finShape.closePath();
+  const finGeo = new THREE.ExtrudeGeometry(finShape, { depth: 0.03, bevelEnabled: false });
+  finGeo.translate(0, 0, -0.015);
   for (let i = 0; i < 4; i++) {
-    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.28, 0.22), w);
-    const a = (i / 4) * Math.PI * 2;
-    fin.position.set(Math.cos(a) * 0.34, -0.5, Math.sin(a) * 0.34);
-    fin.rotation.y = -a;
+    const fin = new THREE.Mesh(finGeo, w);
+    fin.rotation.y = -(i / 4) * Math.PI * 2;
+    fin.position.set(0, -0.5, 0);
+    fin.translateX(0.32);
     g.add(fin);
   }
 
@@ -90,15 +97,20 @@ export function createSputnik() {
   const g = new THREE.Group();
   const ball = new THREE.Mesh(new THREE.SphereGeometry(0.5, 48, 48), steel(0xd6dae0, 0.12, 1.0));
   g.add(ball);
+  // four antennas attached at the equator, swept ~20 degrees off the tangent
+  // plane (i.e. nearly tangent, leaning slightly outward) and fanning down.
+  const up = new THREE.Vector3(0, 1, 0);
+  const antGeo = new THREE.CylinderGeometry(0.01, 0.004, 1.5, 8);
+  antGeo.translate(0, 0.75, 0); // base at origin, extends +Y
+  const s20 = Math.sin((20 * Math.PI) / 180);
+  const c20 = Math.cos((20 * Math.PI) / 180);
   for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2;
-    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.004, 1.4, 8), steel(0xaab0b8, 0.3, 0.9));
-    ant.position.set(Math.cos(a) * 0.35, -0.45, Math.sin(a) * 0.35);
-    ant.rotation.z = Math.cos(a) * 0.5;
-    ant.rotation.x = -Math.sin(a) * 0.5;
-    ant.rotation.y = -a;
-    // sweep the antennas back and down
-    ant.rotateX(2.5);
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    // 20deg outward (radial) + the rest along the downward tangent
+    const dir = new THREE.Vector3(Math.cos(a) * s20, -c20, Math.sin(a) * s20).normalize();
+    const ant = new THREE.Mesh(antGeo, steel(0xaab0b8, 0.3, 0.9));
+    ant.quaternion.setFromUnitVectors(up, dir);
+    ant.position.set(Math.cos(a) * 0.5, 0, Math.sin(a) * 0.5); // on the equator
     g.add(ant);
   }
   g.userData.spin = 0.5;
@@ -139,38 +151,51 @@ const gold = (r = 0.25) => new THREE.MeshStandardMaterial({ color: 0xc9a227, rou
 // James Webb: gold hex primary mirror, tiered diamond sunshield, secondary on a tripod.
 export function createJWST() {
   const g = new THREE.Group();
-  const hex = new THREE.CylinderGeometry(0.17, 0.17, 0.03, 6);
+  const my = 0.5; // mirror raised above the shield
+
+  // primary mirror: gold hex cluster
+  const hex = new THREE.CylinderGeometry(0.16, 0.16, 0.03, 6);
   const R = 2;
-  const s = 0.31;
+  const s = 0.29;
   for (let q = -R; q <= R; q++) {
     for (let r = -R; r <= R; r++) {
       if (Math.abs(q + r) > R) continue;
       const seg = new THREE.Mesh(hex, gold());
       seg.rotation.x = Math.PI / 2;
-      seg.position.set(s * 1.5 * q, s * Math.sqrt(3) * (r + q / 2), 0);
+      seg.position.set(s * 1.5 * q, my + s * Math.sqrt(3) * (r + q / 2), 0);
       g.add(seg);
     }
   }
-  // tiered diamond sunshield behind/below
+
+  // bus directly under the mirror, with a mast tying mirror to shield
+  const bus = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.24, 0.3), steel(0xbfa76a, 0.45, 0.8));
+  bus.position.set(0, my - 0.5, -0.1);
+  g.add(bus);
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.55, 8), steel(0xaab0b8));
+  mast.position.set(0, my - 0.45, -0.04);
+  g.add(mast);
+
+  // tiered diamond sunshield fanned just under the bus (connected)
   for (let i = 0; i < 5; i++) {
     const layer = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.8, 1.7),
-      new THREE.MeshStandardMaterial({ color: 0xb6aecb, metalness: 0.6, roughness: 0.4, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })
+      new THREE.PlaneGeometry(2.6, 1.6),
+      new THREE.MeshStandardMaterial({ color: 0xb6aecb, metalness: 0.6, roughness: 0.4, side: THREE.DoubleSide, transparent: true, opacity: 0.5 })
     );
-    layer.rotation.x = -0.95;
+    layer.rotation.x = -1.05;
     layer.rotation.z = Math.PI / 4;
-    layer.position.set(0, -0.55 - i * 0.05, -0.5 - i * 0.13);
+    layer.position.set(0, my - 0.7 - i * 0.06, -0.2 - i * 0.12);
     g.add(layer);
   }
-  // secondary mirror on a tripod
-  const sec = new THREE.Mesh(new THREE.CircleGeometry(0.09, 18), gold(0.2));
-  sec.position.z = 0.95;
+
+  // secondary mirror on a tripod in front of the primary
+  const sec = new THREE.Mesh(new THREE.CircleGeometry(0.08, 18), gold(0.2));
+  sec.position.set(0, my, 0.72);
   sec.rotation.y = Math.PI;
   g.add(sec);
-  for (const dx of [-0.18, 0.18, 0]) {
-    const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 1.0, 6), steel(0xaab0b8));
-    boom.position.set(dx, dx === 0 ? -0.2 : 0.12, 0.48);
-    boom.rotation.x = Math.PI / 2 + (dx === 0 ? -0.18 : 0.16);
+  for (const dx of [-0.16, 0.16, 0]) {
+    const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.8, 6), steel(0xaab0b8));
+    boom.position.set(dx, my + (dx === 0 ? -0.12 : 0.1), 0.38);
+    boom.rotation.x = Math.PI / 2 + (dx === 0 ? -0.2 : 0.18);
     g.add(boom);
   }
   g.userData.spin = 0.3;
@@ -180,34 +205,57 @@ export function createJWST() {
 // Voyager: big dish, decagonal bus, golden record, long magnetometer + RTG booms.
 export function createVoyager() {
   const g = new THREE.Group();
-  const dish = new THREE.Mesh(
-    new THREE.SphereGeometry(0.6, 28, 14, 0, Math.PI * 2, 0, Math.PI * 0.28),
-    new THREE.MeshStandardMaterial({ color: 0xeceff2, roughness: 0.4, metalness: 0.3, side: THREE.DoubleSide })
-  );
-  dish.rotation.x = Math.PI;
-  dish.position.z = 0.22;
-  g.add(dish);
-  const bus = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.16, 10), gold(0.4));
-  bus.rotation.x = Math.PI / 2;
+
+  // ten-sided drum bus
+  const bus = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.22, 10), gold(0.4));
   g.add(bus);
-  const rec = new THREE.Mesh(new THREE.CircleGeometry(0.12, 24), gold(0.2));
-  rec.position.set(0.18, 0, 0);
-  rec.rotation.y = Math.PI / 2;
+  // golden record on a bus face
+  const rec = new THREE.Mesh(new THREE.CircleGeometry(0.14, 24), gold(0.18));
+  rec.position.z = 0.24;
   g.add(rec);
-  const mag = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 3.0, 6), steel(0x9aa0a8, 0.5, 0.6));
+
+  // big white dish on top, mouth opening up, with feed mast + subreflector
+  const dish = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.32),
+    new THREE.MeshStandardMaterial({ color: 0xf2f4f6, roughness: 0.45, metalness: 0.2, side: THREE.DoubleSide })
+  );
+  dish.rotation.x = Math.PI; // concave opens upward
+  dish.position.y = 0.5;
+  g.add(dish);
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.5, 6), steel(0xaab0b8));
+  mast.position.y = 0.62;
+  g.add(mast);
+  const sub = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), steel(0xaab0b8));
+  sub.position.y = 0.85;
+  g.add(sub);
+
+  // long magnetometer boom to one side
+  const mag = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 3.0, 6), steel(0x9aa0a8, 0.5, 0.6));
   mag.rotation.z = Math.PI / 2;
-  mag.position.x = 1.5;
+  mag.position.set(1.5, 0.0, 0);
   g.add(mag);
-  const sci = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.0, 6), steel());
-  sci.position.set(0.35, 0.55, 0);
-  sci.rotation.z = -0.5;
+
+  // science boom with an instrument box on the opposite side
+  const sci = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.8, 6), steel());
+  sci.rotation.z = Math.PI / 2;
+  sci.position.set(-0.55, -0.05, 0.12);
   g.add(sci);
+  const instr = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.14), gold(0.5));
+  instr.position.set(-0.95, -0.05, 0.12);
+  g.add(instr);
+
+  // RTG boom angled down with three units
   for (let i = 0; i < 3; i++) {
-    const rtg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.13, 12), black());
-    rtg.position.set(-0.55 - i * 0.16, -0.45 - i * 0.1, 0);
+    const rtg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.14, 12), black());
     rtg.rotation.z = Math.PI / 2;
+    rtg.position.set(-0.4 - i * 0.16, -0.32 - i * 0.12, -0.18);
     g.add(rtg);
   }
+  const rtgBoom = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.7, 6), steel());
+  rtgBoom.rotation.z = 0.7;
+  rtgBoom.position.set(-0.3, -0.22, -0.18);
+  g.add(rtgBoom);
+
   g.userData.spin = 0.3;
   return g;
 }
@@ -215,24 +263,42 @@ export function createVoyager() {
 // Solar sail: large thin reflective square on diagonal booms with a small bus.
 export function createSolarSail() {
   const g = new THREE.Group();
+  const S = 2.6;
+  const H = S / 2;
   const sail = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.6, 2.6),
-    new THREE.MeshStandardMaterial({ color: 0xcfd6e0, metalness: 0.9, roughness: 0.18, side: THREE.DoubleSide, emissive: 0x223047, emissiveIntensity: 0.25 })
+    new THREE.PlaneGeometry(S, S),
+    new THREE.MeshStandardMaterial({ color: 0xcfd6e0, metalness: 0.9, roughness: 0.18, side: THREE.DoubleSide, emissive: 0x2a3a52, emissiveIntensity: 0.3 })
   );
   g.add(sail);
+  // quadrant seams (a single cross)
   g.add(
     new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.PlaneGeometry(2.6, 2.6, 4, 4)),
-      new THREE.LineBasicMaterial({ color: 0x6f8bb0, transparent: true, opacity: 0.4 })
+      new THREE.EdgesGeometry(new THREE.PlaneGeometry(S, S, 2, 2)),
+      new THREE.LineBasicMaterial({ color: 0x7f9bc0, transparent: true, opacity: 0.45 })
     )
   );
+  // perimeter frame so the membrane reads as a covered, tensioned sail
+  const frameMat = steel(0x9aa0a8, 0.4, 0.7);
+  const barH = new THREE.BoxGeometry(S + 0.06, 0.04, 0.04);
+  const barV = new THREE.BoxGeometry(0.04, S + 0.06, 0.04);
+  for (const y of [H, -H]) {
+    const b = new THREE.Mesh(barH, frameMat);
+    b.position.y = y;
+    g.add(b);
+  }
+  for (const x of [H, -H]) {
+    const b = new THREE.Mesh(barV, frameMat);
+    b.position.x = x;
+    g.add(b);
+  }
+  // diagonal booms to the corners (behind the membrane)
   for (const r of [Math.PI / 4, -Math.PI / 4]) {
-    const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 3.6, 8), steel(0x9aa0a8, 0.4, 0.7));
+    const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, S * Math.SQRT2, 8), frameMat);
     boom.rotation.z = r;
-    boom.position.z = -0.06;
+    boom.position.z = -0.05;
     g.add(boom);
   }
-  const bus = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), steel(0xb0b6c0, 0.4, 0.8));
+  const bus = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), steel(0xb0b6c0, 0.4, 0.8));
   bus.position.z = -0.12;
   g.add(bus);
   g.userData.spin = 0.22;
@@ -245,34 +311,53 @@ export function createSpaceShuttle() {
   const w = white();
   const k = black();
 
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 1.5, 18), w);
+  // rounded fuselage with volume
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 1.0, 8, 16), w);
   body.rotation.z = Math.PI / 2;
   g.add(body);
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.42, 18), k);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.44, 18), w);
   nose.rotation.z = -Math.PI / 2;
-  nose.position.x = 0.92;
+  nose.position.x = 0.82;
   g.add(nose);
+  // black cockpit / chine
+  const cockpit = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.3), k);
+  cockpit.position.set(0.46, 0.11, 0);
+  g.add(cockpit);
 
-  // delta wing (triangle extruded thin), laid flat
+  // thick delta wing
   const shape = new THREE.Shape();
-  shape.moveTo(0.55, 0);
-  shape.lineTo(-0.7, 0.95);
-  shape.lineTo(-0.7, -0.95);
+  shape.moveTo(0.5, 0);
+  shape.lineTo(-0.72, 1.0);
+  shape.lineTo(-0.72, -1.0);
   shape.closePath();
-  const wing = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.05, bevelEnabled: false }), w);
+  const wing = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.09, bevelEnabled: false }), w);
   wing.rotation.x = -Math.PI / 2;
-  wing.position.set(-0.1, -0.12, 0);
+  wing.position.set(-0.1, -0.13, 0);
   g.add(wing);
 
   // vertical tail
   const tailShape = new THREE.Shape();
-  tailShape.moveTo(-0.7, 0);
-  tailShape.lineTo(-0.7, 0.42);
-  tailShape.lineTo(-0.4, 0);
+  tailShape.moveTo(-0.72, 0);
+  tailShape.lineTo(-0.72, 0.46);
+  tailShape.lineTo(-0.42, 0);
   tailShape.closePath();
-  const tail = new THREE.Mesh(new THREE.ExtrudeGeometry(tailShape, { depth: 0.03, bevelEnabled: false }), w);
-  tail.position.set(0, 0.08, -0.015);
+  const tail = new THREE.Mesh(new THREE.ExtrudeGeometry(tailShape, { depth: 0.04, bevelEnabled: false }), w);
+  tail.position.set(0, 0.1, -0.02);
   g.add(tail);
+
+  // OMS pods + three engine bells at the rear
+  for (const dir of [-1, 1]) {
+    const pod = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.12, 6, 10), w);
+    pod.rotation.z = Math.PI / 2;
+    pod.position.set(-0.64, 0.13, dir * 0.12);
+    g.add(pod);
+  }
+  for (const [px, py] of [[-0.78, 0.06], [-0.78, 0.17], [-0.78, -0.05]]) {
+    const bell = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.13, 12, 1, true), k);
+    bell.rotation.z = Math.PI / 2;
+    bell.position.set(px, py, 0);
+    g.add(bell);
+  }
 
   g.userData.spin = 0.35;
   return g;

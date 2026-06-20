@@ -29,19 +29,20 @@ function materials(accent) {
 function solarWings(m, span, chord) {
   const wings = new THREE.Group();
   const geo = new THREE.BoxGeometry(span, 0.01, chord);
+  const off = span * 0.5 + 0.34; // panel center: clear of the bus
   for (const dir of [-1, 1]) {
     const w = new THREE.Mesh(geo, m.panel);
-    w.position.x = dir * (span * 0.5 + 0.12);
+    w.position.x = dir * off;
     wings.add(w);
-    const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.24, 8), m.body);
+    const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.46, 8), m.body);
     boom.rotation.z = Math.PI / 2;
-    boom.position.x = dir * 0.16;
+    boom.position.x = dir * 0.24;
     wings.add(boom);
     const grid = new THREE.LineSegments(
       new THREE.EdgesGeometry(new THREE.BoxGeometry(span, 0.01, chord, 6, 1, 2)),
       new THREE.LineBasicMaterial({ color: 0x4a6aa0, transparent: true, opacity: 0.5 })
     );
-    grid.position.x = dir * (span * 0.5 + 0.12);
+    grid.position.x = dir * off;
     wings.add(grid);
   }
   return wings;
@@ -90,12 +91,16 @@ export function createCommsSat({ accent = "#ff6a3d" } = {}) {
 
   sat.add(new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.3, 0.26), m.foil));
 
-  const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.02, 24, 1, true), m.body);
-  dish.rotation.x = Math.PI / 2;
-  dish.position.z = 0.2;
+  // concave parabolic-ish dish (sphere cap) facing nadir (+Z)
+  const dish = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 28, 14, 0, Math.PI * 2, 0, Math.PI * 0.34),
+    new THREE.MeshStandardMaterial({ color: 0xdfe3e8, roughness: 0.4, metalness: 0.3, side: THREE.DoubleSide })
+  );
+  dish.rotation.x = Math.PI; // open face toward +Z
+  dish.position.z = 0.18;
   sat.add(dish);
   const feed = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), m.hot);
-  feed.position.z = 0.31;
+  feed.position.z = 0.32;
   sat.add(feed);
 
   const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.24, 6), m.body);
@@ -161,10 +166,13 @@ export function createEOSat({ accent = "#ff6a3d" } = {}) {
   sat.add(aperture);
   sat.add(glint(glow, accent, new THREE.Vector3(0, 0, 0.55), 0.2));
 
-  // side high-gain dish
-  const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.02, 20, 1, true), m.body);
-  dish.rotation.z = Math.PI / 2;
-  dish.position.set(0.22, 0.12, -0.1);
+  // side high-gain dish (concave cap)
+  const dish = new THREE.Mesh(
+    new THREE.SphereGeometry(0.13, 20, 10, 0, Math.PI * 2, 0, Math.PI * 0.34),
+    new THREE.MeshStandardMaterial({ color: 0xdfe3e8, roughness: 0.4, metalness: 0.3, side: THREE.DoubleSide })
+  );
+  dish.rotation.z = -Math.PI / 2; // opens toward +X
+  dish.position.set(0.24, 0.1, -0.08);
   sat.add(dish);
 
   return finalize(sat, solarWings(m, 0.7, 0.34), 0.42);
