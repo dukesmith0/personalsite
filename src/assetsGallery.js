@@ -5,15 +5,29 @@
 // ---------------------------------------------------------------------------
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import "./styles/assets.css";
 import { createCommsSat } from "./lib/satelliteModel.js";
-import { createSaturnV, createSputnik, createManholeCover } from "./lib/objects.js";
+import {
+  createSaturnV,
+  createSputnik,
+  createManholeCover,
+  createJWST,
+  createVoyager,
+  createSolarSail,
+  createSpaceShuttle,
+} from "./lib/objects.js";
+import { applyChrome, applyToon } from "./lib/styles.js";
 
 const canvas = document.getElementById("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 const scene = new THREE.Scene();
+// environment so metallic surfaces actually reflect (otherwise they read black)
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
 camera.position.set(0, 1.4, 12);
 
@@ -43,22 +57,34 @@ grid.material.transparent = true;
 grid.material.opacity = 0.5;
 scene.add(grid);
 
-// objects laid out left to right
+// objects laid out in a grid on the floor
 const sat = createCommsSat({ accent: "#ff6a3d" });
-sat.scale.setScalar(2.2);
+sat.scale.setScalar(2.0);
+const chromeSat = applyChrome(createCommsSat({ accent: "#ff6a3d" }));
+chromeSat.scale.setScalar(2.0);
 
 const items = [
   { name: "Comms Satellite", obj: sat, y: 0 },
-  { name: "Saturn V", obj: createSaturnV(), y: 0.1 },
+  { name: "Saturn V", obj: createSaturnV(), y: 0.3 },
   { name: "Sputnik 1", obj: createSputnik(), y: 0 },
   { name: "Manhole Cover", obj: createManholeCover(), y: -1.2 },
+  { name: "James Webb", obj: createJWST(), y: 0 },
+  { name: "Voyager", obj: createVoyager(), y: 0 },
+  { name: "Solar Sail", obj: createSolarSail(), y: 0 },
+  { name: "Space Shuttle", obj: createSpaceShuttle(), y: 0 },
+  { name: "Satellite / Chrome", obj: chromeSat, y: 0 },
+  { name: "JWST / Toon", obj: applyToon(createJWST()), y: 0 },
 ];
 
 const labelLayer = document.getElementById("labels");
-const spacing = 3.4;
-const startX = -((items.length - 1) * spacing) / 2;
+const spacing = 3.6;
+const cols = 5;
+const rowGap = 4.0;
+const startX = -((cols - 1) * spacing) / 2;
 items.forEach((it, i) => {
-  it.obj.position.set(startX + i * spacing, it.y, 0);
+  const col = i % cols;
+  const row = Math.floor(i / cols);
+  it.obj.position.set(startX + col * spacing, it.y, -row * rowGap);
   scene.add(it.obj);
   const el = document.createElement("div");
   el.className = "obj-label";
@@ -67,6 +93,10 @@ items.forEach((it, i) => {
   it.label = el;
   it.anchor = new THREE.Vector3();
 });
+
+// frame the whole grid
+controls.target.set(0, -0.2, -rowGap / 2);
+camera.position.set(0, 2.6, 13);
 
 function resize() {
   const w = window.innerWidth;
