@@ -31,6 +31,25 @@ img { display: block; max-width: 100%; }
   width: 100%;
   height: 100%;
 }
+/* film grain overlay: subtle analog texture, zero cost in the 3D layer */
+#grain {
+  position: fixed;
+  inset: -12%;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 0.6s steps(1) infinite;
+}
+@keyframes grain {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-1.5%, 1%); }
+  50% { transform: translate(1.5%, -1%); }
+  75% { transform: translate(-1%, -1.5%); }
+  100% { transform: translate(1%, 1.5%); }
+}
+
 /* vignette so text always stays readable over the globe */
 #scene-veil {
   position: fixed;
@@ -38,8 +57,8 @@ img { display: block; max-width: 100%; }
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(120% 90% at 50% 50%, transparent 40%, rgba(6, 7, 13, 0.55) 100%),
-    linear-gradient(180deg, rgba(6, 7, 13, 0.4) 0%, transparent 18%, transparent 82%, rgba(6, 7, 13, 0.55) 100%);
+    radial-gradient(120% 90% at 50% 50%, transparent 32%, rgba(6, 7, 13, 0.7) 100%),
+    linear-gradient(180deg, rgba(6, 7, 13, 0.55) 0%, transparent 20%, transparent 78%, rgba(6, 7, 13, 0.7) 100%);
 }
 
 /* ---------- shared layout ---------- */
@@ -53,12 +72,9 @@ section { position: relative; min-height: 100vh; display: flex; align-items: cen
   letter-spacing: 0.32em;
   text-transform: uppercase;
   color: var(--accent);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.8em;
+  display: inline-block;
   margin-bottom: var(--s-3);
 }
-.kicker::before { content: ""; width: 2.4em; height: 1px; background: var(--accent); opacity: 0.8; }
 
 h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.02; letter-spacing: -0.02em; }
 h2 { font-size: var(--t-h2); margin-bottom: var(--s-3); }
@@ -86,10 +102,36 @@ p + p { margin-top: var(--s-2); }
 
 /* ---------- HERO ---------- */
 .hero { align-items: center; }
-.hero .wrap { display: grid; }
+.hero .wrap { display: grid; position: relative; }
+/* soft lower-third scrim so the headline reads over bright continents */
+.hero .wrap::before {
+  content: "";
+  position: absolute;
+  inset: -12% -25% -12% -30%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(60% 65% at 32% 50%, rgba(4, 6, 12, 0.8), transparent 72%);
+}
 .hero h1 { font-size: var(--t-hero); font-weight: 600; max-width: 16ch; }
 .hero h1 em { font-style: normal; color: var(--dim); font-weight: 300; }
 .hero .lede { margin-top: var(--s-3); }
+/* legibility insurance over the moving globe */
+.hero h1, .hero .lede, h2, .lede, .about #aboutText p, .contact h2 {
+  text-shadow: 0 2px 24px rgba(4, 6, 12, 0.6);
+}
+
+/* soft content scrim behind text-heavy sections so copy reads over the globe */
+.about .wrap, .experience .wrap, .contact .wrap { position: relative; }
+.about .wrap::before, .experience .wrap::before, .contact .wrap::before {
+  content: "";
+  position: absolute;
+  inset: -14% -10%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(92% 82% at 50% 50%, rgba(4, 6, 12, 0.78) 0%, rgba(4, 6, 12, 0.52) 55%, transparent 86%);
+}
+.xp .what h3, .xp .what .org, .xp .what p, .xp .when { text-shadow: 0 1px 18px rgba(4, 6, 12, 0.7); }
+.xp .what p { color: #aab3c2; }
 .scroll-hint {
   position: absolute; left: 50%; bottom: var(--s-4); transform: translateX(-50%);
   font-family: var(--font-label); font-size: var(--t-label); letter-spacing: 0.24em; color: var(--faint);
@@ -106,7 +148,7 @@ p + p { margin-top: var(--s-2); }
   display: grid; place-items: center; position: relative; overflow: hidden;
 }
 .about .portrait::after {
-  content: "PORTRAIT — drop /public/images/portrait.jpg";
+  content: "PORTRAIT - drop /public/images/portrait.jpg";
   font-family: var(--font-label); font-size: var(--t-label); letter-spacing: 0.16em; color: var(--faint); padding: 0 var(--s-3); text-align: center;
 }
 @media (max-width: 860px) { .about .wrap { grid-template-columns: 1fr; } .about .portrait { max-width: 380px; } }

@@ -1,8 +1,9 @@
 // ---------------------------------------------------------------------------
-// Procedural satellite — built from primitives so it stays crisp & lightweight
+// Procedural satellite - built from primitives so it stays crisp & lightweight
 // (no heavy downloaded asset). Central bus, two solar wings, dish + antenna.
 // ---------------------------------------------------------------------------
 import * as THREE from "three";
+import { makeGlowTexture } from "./glow.js";
 
 export function createSatellite({ accent = "#ff6a3d" } = {}) {
   const sat = new THREE.Group();
@@ -57,6 +58,32 @@ export function createSatellite({ accent = "#ff6a3d" } = {}) {
   const tip = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), hot);
   tip.position.y = -0.4;
   sat.add(tip);
+
+  // fake-bloom glints on the hot points (additive sprites, very cheap)
+  const glowTex = makeGlowTexture();
+  const glint = (pos, size) => {
+    const s = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: glowTex,
+        color: accent,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+        opacity: 0.9,
+      })
+    );
+    s.position.copy(pos);
+    s.scale.setScalar(size);
+    return s;
+  };
+  sat.add(glint(new THREE.Vector3(0, 0.04, 0.3), 0.22));
+  sat.add(glint(new THREE.Vector3(0, -0.4, 0), 0.16));
+
+  // every part is static relative to the bus: stop recomputing local matrices
+  sat.children.forEach((c) => {
+    c.updateMatrix();
+    c.matrixAutoUpdate = false;
+  });
 
   sat.scale.setScalar(0.42);
   return sat;

@@ -1,5 +1,5 @@
 /* ===========================================================================
-   Design tokens — the single source of truth for type, color, space & motion.
+   Design tokens - the single source of truth for type, color, space & motion.
    Every component pulls from these so the whole site stays standardized.
    =========================================================================== */
 :root {
@@ -16,7 +16,7 @@
   --t-mono: 0.72rem;
   --t-label: 0.68rem;
 
-  /* color — considered, not default-neon. cool glow + one warm signal accent */
+  /* color - considered, not default-neon. cool glow + one warm signal accent */
   --bg: #06070d;
   --bg-elev: #0b0e17;
   --ink: #eceef3;
@@ -24,8 +24,8 @@
   --faint: #59616f;
   --line: rgba(150, 165, 190, 0.12);
   --line-strong: rgba(150, 165, 190, 0.28);
-  --glow: #cfe0ea; /* continents / atmosphere — cool near-white */
-  --accent: #ff6a3d; /* signal orange — used sparingly */
+  --glow: #cfe0ea; /* continents / atmosphere - cool near-white */
+  --accent: #ff6a3d; /* signal orange - used sparingly */
   --accent-dim: rgba(255, 106, 61, 0.16);
 
   /* space scale */

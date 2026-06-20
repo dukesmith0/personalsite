@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Scroll reveal — adds .is-visible to [data-reveal] elements as they enter view.
+// Scroll reveal - adds .is-visible to [data-reveal] elements as they enter view.
 // ---------------------------------------------------------------------------
 export function initReveal() {
   const els = document.querySelectorAll("[data-reveal]");
