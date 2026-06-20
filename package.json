@@ -1,7 +1,7 @@
 {
   "name": "duke-smith-portfolio",
   "version": "1.0.0",
-  "description": "Personal portfolio — a real-time orbital ground-track tracker built with D3-geo and SGP4 propagation.",
+  "description": "Cinematic scroll-driven portfolio — a 3D satellite orbiting a stylized globe.",
   "type": "module",
   "private": true,
   "scripts": {
@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "d3-geo": "^3.1.1",
-    "satellite.js": "^5.0.0",
+    "@fontsource/josefin-sans": "^5.0.0",
+    "@fontsource/josefin-slab": "^5.0.0",
+    "lenis": "^1.1.18",
+    "three": "^0.171.0",
     "topojson-client": "^3.1.0",
     "world-atlas": "^2.0.2"
   },

@@ -6,6 +6,12 @@ export default defineConfig({
   base: './',
   build: {
     target: 'es2020',
-    outDir: 'dist'
+    outDir: 'dist',
+    rollupOptions: {
+      output: {
+        // split the heavy 3D vendor into its own long-cache chunk
+        manualChunks: { three: ['three'] }
+      }
+    }
   }
 });

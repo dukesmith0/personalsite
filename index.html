@@ -5,65 +5,80 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Duke Smith — Aerospace · Satellite Instrumentation</title>
 <meta name="description" content="Duke Smith — aerospace engineer working on satellite instrumentation. UCLA." />
-
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300;400;600;700;800&family=B612+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<meta name="theme-color" content="#06070d" />
+<!-- All fonts (Josefin Sans / Josefin Slab) are self-hosted via @fontsource -->
 </head>
 <body>
-<canvas id="globe"></canvas>
+<canvas id="scene"></canvas>
+<div id="scene-veil"></div>
 
-<div id="boot">ACQUIRING SIGNAL…</div>
+<div id="boot"><div class="b">Initializing flight scene…</div></div>
 
-<header class="brand">
-  <div class="name"><span class="dot"></span>DUKE SMITH</div>
-  <div class="sub">AEROSPACE · SATELLITE INSTRUMENTATION</div>
+<header class="topbar">
+  <div class="brand">
+    <div class="name">Duke Smith</div>
+    <div class="role">Aerospace · Satellite Instrumentation</div>
+  </div>
+  <nav class="nav">
+    <a href="#about">About</a>
+    <a href="#projects">Projects</a>
+    <a href="#experience">Experience</a>
+    <a href="#contact">Contact</a>
+  </nav>
 </header>
 
-<nav>
-  <a href="#about">About</a>
-  <a href="#projects">Projects</a>
-  <a href="#experience">Experience</a>
-  <a class="cta" href="#contact">Contact</a>
-</nav>
+<main>
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="wrap">
+      <div class="kicker" data-reveal>Aerospace Engineer</div>
+      <h1 data-reveal data-reveal-delay="1">Instruments that <em>fly.</em></h1>
+      <p class="lede" data-reveal data-reveal-delay="2">
+        I design and characterize satellite instrumentation — from propulsion test stands to flight software and sensor calibration.
+      </p>
+    </div>
+    <div class="scroll-hint">SCROLL<span></span></div>
+  </section>
 
-<div class="passband"><span class="live"></span><span id="passText">TRACKING</span></div>
+  <!-- ABOUT -->
+  <section class="about" id="about">
+    <div class="wrap">
+      <div>
+        <div class="kicker" data-reveal>About</div>
+        <h2 data-reveal>From the bench to orbit.</h2>
+        <div id="aboutText" data-reveal data-reveal-delay="1"></div>
+      </div>
+      <div class="portrait" data-reveal data-reveal-delay="2"></div>
+    </div>
+  </section>
 
-<section class="hero" id="projects">
-  <div class="eyebrow swap" id="projEyebrow">PROJECT 01 / 02</div>
-  <h1 class="swap" id="projTitle"></h1>
-  <p class="swap" id="projBody"></p>
-  <div class="tags swap" id="projTags"></div>
-  <div class="proj-nav">
-    <button id="prev" aria-label="previous project">‹</button>
-    <span class="counter">PROJECT <b id="projNum">01</b> — <span id="projOf">02</span></span>
-    <button id="next" aria-label="next project">›</button>
-  </div>
-</section>
+  <!-- PROJECTS -->
+  <section class="projects" id="projects">
+    <div class="wrap">
+      <div class="kicker" data-reveal>Selected Work</div>
+      <h2 data-reveal>Projects</h2>
+      <div class="grid" id="projectGrid"></div>
+    </div>
+  </section>
 
-<aside class="telemetry" aria-hidden="true">
-  <div class="ttl">▸ LIVE TELEMETRY</div>
-  <div class="row"><span class="k">LAT</span><span class="v"><span id="tLat">—</span><small>°</small></span></div>
-  <div class="row"><span class="k">LON</span><span class="v"><span id="tLon">—</span><small>°</small></span></div>
-  <div class="row"><span class="k">ALT</span><span class="v"><span id="tAlt">—</span><small>km</small></span></div>
-  <div class="row"><span class="k">VEL</span><span class="v"><span id="tVel">—</span><small>km/s</small></span></div>
-  <div class="row"><span class="k">PERIOD</span><span class="v"><span id="tPer">—</span><small>min</small></span></div>
-</aside>
+  <!-- EXPERIENCE -->
+  <section class="experience" id="experience">
+    <div class="wrap">
+      <div class="kicker" data-reveal>Trajectory</div>
+      <h2 data-reveal>Experience</h2>
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </section>
 
-<aside class="station" aria-hidden="true">
-  <div class="ttl">▸ GROUND STATION</div>
-  <div class="gs">
-    <span class="name">UCLA · LOS ANGELES</span>
-    <span class="sig" id="gsSig">ACQUIRING</span>
-  </div>
-  <div class="look">
-    <div>AZ<b id="gAz">—</b></div>
-    <div>EL<b id="gEl">—</b></div>
-    <div>RANGE<b id="gRng">—</b></div>
-  </div>
-</aside>
-
-<div class="note">SGP4 PROPAGATION FROM PUBLISHED TLE · ILLUSTRATIVE</div>
+  <!-- CONTACT -->
+  <section class="contact" id="contact">
+    <div class="wrap">
+      <div class="kicker" data-reveal>Contact</div>
+      <h2 data-reveal>Let’s build something<br />that leaves the ground.</h2>
+      <div class="links" id="contactLinks" data-reveal data-reveal-delay="1"></div>
+    </div>
+  </section>
+</main>
 
 <script type="module" src="/src/main.js"></script>
 </body>
