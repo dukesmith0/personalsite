@@ -6,10 +6,19 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 
+const CDN = "https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/libs/";
 const draco = new DRACOLoader().setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/");
 const loader = new GLTFLoader().setDRACOLoader(draco).setMeshoptDecoder(MeshoptDecoder);
+
+// KTX2 (basis) textures need a transcoder + GPU support detection. Without this
+// such textures fail to decode and models render untextured / black.
+export function initLoader(renderer) {
+  const ktx2 = new KTX2Loader().setTranscoderPath(CDN + "basis/").detectSupport(renderer);
+  loader.setKTX2Loader(ktx2);
+}
 
 export function loadModel(url, { fit = 2 } = {}) {
   return new Promise((resolve, reject) => {

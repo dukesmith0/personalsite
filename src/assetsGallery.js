@@ -9,16 +9,21 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import "./styles/assets.css";
 import { createManholeCover, createJWST, createVoyager, createSolarSail } from "./lib/objects.js";
 import { applyToon } from "./lib/styles.js";
-import { loadModel } from "./lib/loadModel.js";
+import { loadModel, initLoader } from "./lib/loadModel.js";
 
 const canvas = document.getElementById("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// tone mapping so PBR glTF models look correct instead of dark/flat
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+initLoader(renderer); // enable KTX2 texture decoding
 
 const scene = new THREE.Scene();
 // environment so metallic surfaces actually reflect (otherwise they read black)
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 1.5; // brighter reflections so metals read as metal
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
 camera.position.set(0, 1.4, 12);
