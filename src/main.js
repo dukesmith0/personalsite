@@ -35,15 +35,14 @@ $("#projectGrid").innerHTML = PROJECTS.map(
 ).join("");
 
 $("#timeline").innerHTML = EXPERIENCE.map(
-  (x) => `
-  <div class="xp" data-reveal>
-    <div class="when">${x.when}</div>
-    <div class="what">
-      <h3>${x.role}</h3>
-      <div class="org">${x.org}</div>
+  (x, i) => `
+  <article class="card xp-card" data-reveal data-reveal-delay="${i % 3}">
+    <div class="body">
+      <span class="idx">${x.when}</span>
+      <div class="meta"><h3>${x.role}</h3><div class="org">${x.org}</div></div>
       <p>${x.body}</p>
     </div>
-  </div>`
+  </article>`
 ).join("");
 
 $("#aboutText").innerHTML = ABOUT.map((p) => `<p>${p}</p>`).join("");

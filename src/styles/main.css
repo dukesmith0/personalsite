@@ -132,8 +132,7 @@ p + p { margin-top: var(--s-2); }
   pointer-events: none;
   background: radial-gradient(70% 60% at 50% 50%, rgba(4, 6, 12, 0.72) 0%, rgba(4, 6, 12, 0.4) 40%, transparent 72%);
 }
-.xp .what h3, .xp .what .org, .xp .what p, .xp .when { text-shadow: 0 1px 18px rgba(4, 6, 12, 0.7); }
-.xp .what p { color: #aab3c2; }
+.xp-card h3, .xp-card .org, .xp-card p, .xp-card .idx { text-shadow: 0 1px 18px rgba(4, 6, 12, 0.7); }
 .scroll-hint {
   position: absolute; left: 50%; bottom: var(--s-4); transform: translateX(-50%);
   font-family: var(--font-label); font-size: var(--t-label); letter-spacing: 0.24em; color: var(--faint);
@@ -175,14 +174,14 @@ p + p { margin-top: var(--s-2); }
 .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: var(--s-3); }
 .tags span { font-family: var(--font-label); font-size: var(--t-label); letter-spacing: 0.06em; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0.4em 0.9em; }
 
-/* ---------- EXPERIENCE ---------- */
-.experience .timeline { margin-top: var(--s-4); border-top: 1px solid var(--line); }
-.xp { display: grid; grid-template-columns: 0.4fr 1fr; gap: var(--s-4); padding: var(--s-4) 0; border-bottom: 1px solid var(--line); align-items: baseline; }
-.xp .when { font-family: var(--font-label); font-size: var(--t-mono); letter-spacing: 0.1em; color: var(--faint); }
-.xp .what h3 { margin-bottom: 0.3em; }
-.xp .what .org { color: var(--accent); font-family: var(--font-label); font-size: var(--t-mono); letter-spacing: 0.08em; }
-.xp .what p { color: var(--dim); margin-top: var(--s-2); max-width: 60ch; }
-@media (max-width: 720px) { .xp { grid-template-columns: 1fr; gap: var(--s-1); } }
+/* ---------- EXPERIENCE (project-style cards for cohesion) ---------- */
+.experience .grid { display: flex; flex-direction: column; gap: var(--s-2); margin-top: var(--s-4); }
+.xp-card .body { padding: var(--s-3) var(--s-4); display: grid; grid-template-columns: 0.4fr 1.1fr 2.2fr; gap: var(--s-4); align-items: center; }
+.xp-card .idx { display: inline-block; }
+.xp-card .meta h3 { margin: 0 0 0.2em; }
+.xp-card .org { margin: 0; color: var(--accent); font-family: var(--font-label); font-size: var(--t-mono); letter-spacing: 0.08em; }
+.xp-card p { margin: 0; color: var(--dim); }
+@media (max-width: 720px) { .xp-card .body { grid-template-columns: 1fr; gap: var(--s-1); } }
 
 /* ---------- CONTACT ---------- */
 .contact .wrap { text-align: center; display: grid; justify-items: center; }

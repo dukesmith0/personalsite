@@ -14,6 +14,7 @@ import { createEarth } from "./earth.js";
 import { createManholeCover } from "./objects.js";
 import { loadModel, initLoader } from "./loadModel.js";
 import { makeGlowTexture } from "./glow.js";
+import objectConfig from "../objects.config.json";
 
 const smoothstep = (x) => x * x * (3 - 2 * x);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -28,18 +29,28 @@ const KEYS = [
   [2.7, 1.5, 3.8], // contact: close on the horizon
 ];
 
-// Per-section object pass. The hero (index 0) shows NO object. Each later
-// section reveals a different object sweeping across the frame from `entry` to
-// `exit` (NDC, off-frame at the ends so swaps are hidden) at `depth` in front
-// of the camera, with its own tilt + tumble so each pass feels distinct and you
-// read it as moving between different objects.
-const SECTIONS = [
-  null, // hero: no object, just the title + globe
-  { model: "/models/lowpoly/low_poly_satellite.glb", fit: 0.55, entry: [-1.35, 0.72], exit: [1.2, 0.2], depth: 1.9, tilt: 0.35, spin: 0.012 }, // about
-  { model: "/models/lowpoly/space_retro_sputnik.glb", fit: 0.45, entry: [1.35, 0.5], exit: [-1.3, 0.6], depth: 1.6, tilt: 0.2, spin: 0.02 }, // projects
-  { model: "/models/lowpoly/low_poly_space_shuttle.glb", fit: 0.72, entry: [-1.2, 0.18], exit: [1.25, 0.72], depth: 2.0, tilt: 0.15, spin: 0.008 }, // experience
-  { manhole: true, fit: 0.42, entry: [1.3, 0.52], exit: [-1.15, 0.74], depth: 1.8, tilt: 0.5, spin: 0.02 }, // contact (last)
-];
+// Per-section object passes are defined in src/objects.config.json (edit that
+// file to tune size, position, orientation, and timing). The hero entry has no
+// object. Each object enters off-frame, parks beside the title (`mid`) while the
+// section is centered, then exits off-frame; `face`/`roll` are a fixed
+// screen-relative orientation (no perpetual spin). Angles in the JSON are in
+// DEGREES; convert to radians here.
+const DEG = Math.PI / 180;
+const SECTIONS = objectConfig.sections.map((s) => {
+  if (!s.model && !s.manhole) return null; // hero / no object
+  return {
+    model: s.model,
+    manhole: !!s.manhole,
+    fit: s.fit,
+    entry: s.entry,
+    mid: s.mid,
+    exit: s.exit,
+    depth: s.depth,
+    face: (s.face || [0, 0, 0]).map((d) => d * DEG),
+    roll: (s.roll || 0) * DEG,
+    phase: s.phase || 0,
+  };
+});
 
 const EARTH_SPIN = Math.PI * 2 * 1.25; // ~1.25 turns of Earth across the page
 
@@ -52,6 +63,25 @@ function sample(keys, p) {
   const a = keys[i];
   const b = keys[i + 1];
   return [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)];
+}
+
+// Object screen path: enter off-frame, glide past a point beside the title
+// (`mid`, so the text stays clear when the section is centered), then exit
+// off-frame. One continuous quadratic Bezier (control point solved so the curve
+// passes through `mid` at t=0.5), with eased ends. No stop-and-go: velocity is
+// smooth across the whole pass.
+function pathPoint(cfg, t) {
+  const e = cfg.entry;
+  const x = cfg.exit;
+  if (!cfg.mid) {
+    const s = smoothstep(t);
+    return [lerp(e[0], x[0], s), lerp(e[1], x[1], s)];
+  }
+  const s = smoothstep(t);
+  const u = 1 - s;
+  const cx = 2 * cfg.mid[0] - 0.5 * (e[0] + x[0]); // control pt: B(0.5) === mid
+  const cy = 2 * cfg.mid[1] - 0.5 * (e[1] + x[1]);
+  return [u * u * e[0] + 2 * u * s * cx + s * s * x[0], u * u * e[1] + 2 * u * s * cy + s * s * x[1]];
 }
 
 // Freeze an object's local matrix: it never moves, so stop recomputing it.
@@ -72,6 +102,7 @@ export class Globe3D {
     this._benchAccum = 0;
     this._benchCount = 0;
     this._satV = new THREE.Vector3();
+    this._viewAxis = new THREE.Vector3();
     this._sunDir = new THREE.Vector3(-4, 2, 3).normalize();
 
     this._tick = this._tick.bind(this);
@@ -128,7 +159,6 @@ export class Globe3D {
       if (cfg.manhole) {
         const m = createManholeCover();
         m.scale.setScalar(cfg.fit);
-        m.rotation.x = cfg.tilt;
         m.visible = false;
         this.crafts[i] = m;
         this.scene.add(m);
@@ -143,7 +173,6 @@ export class Globe3D {
                 m.needsUpdate = true;
               }
             });
-            obj.rotation.x = cfg.tilt;
             obj.visible = false;
             this.crafts[i] = obj;
             this.scene.add(obj);
@@ -210,25 +239,47 @@ export class Globe3D {
 
   _placeSatellite(p) {
     const segs = SECTIONS.length;
-    const fi = Math.min(segs - 1, Math.floor(p * segs));
 
-    // hide everything, then reveal the active section's object (if any/loaded)
-    for (const k in this.crafts) this.crafts[k].visible = false;
-    const cfg = SECTIONS[fi];
-    if (!cfg) return; // hero: no object
-    const sat = this.crafts[fi];
-    if (!sat) return; // model still loading
-    sat.visible = true;
+    // Each object owns a phase-shifted local time lt = (scroll within its
+    // section) + phase, and is visible only while its on-screen pass runs
+    // (0 < lt < 1). Gating on lt rather than the integer scroll bucket means the
+    // object always completes its entry -> exit (off-frame) before vanishing,
+    // even with a large +/- phase. Neighbours may briefly overlap off-frame
+    // during the hand-off, which reads as moving between objects.
+    for (let i = 0; i < segs; i++) {
+      const cfg = SECTIONS[i];
+      const sat = cfg ? this.crafts[i] : null;
+      if (!sat) continue; // hero, or model still loading
+      const lt = p * segs - i + (cfg.phase || 0);
+      if (lt <= 0 || lt >= 1) {
+        sat.visible = false;
+        continue;
+      }
+      sat.visible = true;
 
-    // the object crosses the frame entry -> exit (a pass). Anchor is a screen
-    // NDC unprojected to a world point at the section's depth.
-    const localT = Math.min(1, Math.max(0, p * segs - fi));
-    const ax = lerp(cfg.entry[0], cfg.exit[0], localT);
-    const ay = lerp(cfg.entry[1], cfg.exit[1], localT);
-    this._satV.set(ax, ay, 0.5).unproject(this.camera);
-    this._satV.sub(this.camera.position).normalize().multiplyScalar(cfg.depth).add(this.camera.position);
-    sat.position.copy(this._satV);
-    sat.rotation.y += cfg.spin; // gentle tumble as it passes
+      // Screen anchor: NDC point along the parked path, unprojected to a world
+      // point at the section's depth in front of the camera.
+      const [ax, ay] = pathPoint(cfg, lt);
+      this._satV.set(ax, ay, 0.5).unproject(this.camera);
+      this._satV.sub(this.camera.position).normalize().multiplyScalar(cfg.depth).add(this.camera.position);
+      sat.position.copy(this._satV);
+
+      // Orient relative to the screen (align to the camera, then apply the fixed
+      // per-object facing). No perpetual spin, but a small scroll-driven yaw
+      // (+/- ~0.2 rad across the pass) gives it life as you scroll.
+      sat.quaternion.copy(this.camera.quaternion);
+      sat.rotateX(cfg.face[0]);
+      sat.rotateY(cfg.face[1] + (lt - 0.5) * 0.42);
+      sat.rotateZ(cfg.face[2]);
+
+      // Optional screen-plane roll about the view axis: spins the silhouette
+      // (e.g. to point the nose a particular way) without changing which faces
+      // point at the camera, so the chosen tilt is preserved.
+      if (cfg.roll) {
+        this._viewAxis.copy(this.camera.position).normalize();
+        sat.rotateOnWorldAxis(this._viewAxis, cfg.roll);
+      }
+    }
   }
 
   resize() {

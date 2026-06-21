@@ -58,7 +58,7 @@ const items = [
   { name: "Satellite", model: "/models/lowpoly/low_poly_satellite.glb", fit: 2.0, y: 0, flat: true },
   { name: "Space Shuttle", model: "/models/lowpoly/low_poly_space_shuttle.glb", fit: 2.2, y: 0, flat: true },
   { name: "Retro Sputnik", model: "/models/lowpoly/space_retro_sputnik.glb", fit: 1.8, y: 0, flat: true },
-  { name: "Manhole Cover", obj: createManholeCover(), y: -1.2 },
+  { name: "Manhole Cover", obj: createManholeCover(), y: 0 },
 ];
 
 const labelLayer = document.getElementById("labels");

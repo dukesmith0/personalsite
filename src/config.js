@@ -33,19 +33,31 @@ export const PROJECTS = [
   },
 ];
 
-// TODO: replace with your real history / dates.
+// TODO: replace with your real history / dates. Five cards, most recent first.
 export const EXPERIENCE = [
   {
     when: "Now",
     org: "Satellite Instrumentation",
     role: "Instrumentation Engineer",
-    body: "Building and characterizing flight instrumentation - sensor integration, signal-chain validation, and calibration for spaceflight hardware.",
+    body: "Building and characterizing flight instrumentation - sensor integration and calibration for spaceflight hardware.",
+  },
+  {
+    when: "Recent",
+    org: "Propulsion Test",
+    role: "Test Engineer",
+    body: "Stood up engine test campaigns - feed systems, load cells, and high-rate data capture for hot-fire validation.",
   },
   {
     when: "Earlier",
     org: "Maintenance",
     role: "Maintenance Technician",
-    body: "Hands-on maintenance and troubleshooting of complex hardware - the practical foundation behind the instrumentation work.",
+    body: "Hands-on maintenance and troubleshooting of complex hardware - the practical foundation behind the work.",
+  },
+  {
+    when: "Internship",
+    org: "Aerospace R&D",
+    role: "Engineering Intern",
+    body: "Prototyped avionics and bench fixtures - first exposure to flight hardware bring-up and lab automation.",
   },
   {
     when: "Education",

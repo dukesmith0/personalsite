@@ -1,0 +1,68 @@
+{
+  "_readme": [
+    "Tune each object's scroll pass here, then rebuild (npm run build) or just save while `npm run dev` is running.",
+    "ANGLES ARE IN DEGREES. Positions are screen NDC: x -1 = left edge, +1 = right edge; y -1 = bottom, +1 = top.",
+    "Each object flies in at 'entry', parks beside the title at 'mid' (this is what shows when the section is centered), then leaves at 'exit'.",
+    "fit    = on-screen size (bigger number = bigger object).",
+    "depth  = metres in front of the camera (bigger = pushed further back / smaller).",
+    "face   = [pitch, yaw, bank] tilt in degrees. pitch nods the nose up/down, yaw turns it left/right, bank rolls it.",
+    "roll   = extra spin in the screen plane in degrees (use +/-180 for a clean flip, +/-90 to turn a silhouette on its side). Keeps the same faces toward the camera.",
+    "phase  = shifts the whole pass earlier(+) or later(-) in the scroll so the park lines up with the section's visual center. Small values, e.g. 0.1.",
+    "Set 'manhole': true instead of 'model' for the procedural manhole cover. The 'hero' entry has no object on purpose."
+  ],
+  "sections": [
+    { "section": "hero" },
+
+    {
+      "section": "about",
+      "model": "/models/lowpoly/low_poly_satellite.glb",
+      "fit": 0.45,
+      "entry": [-1.5, 0.55],
+      "mid": [-0.66, 0.05],
+      "exit": [1.3, 0.12],
+      "depth": 1.9,
+      "face": [12.6, 35.5, 0],
+      "roll": 45,
+      "phase": 0.24
+    },
+
+    {
+      "section": "projects",
+      "model": "/models/lowpoly/low_poly_space_shuttle.glb",
+      "fit": 0.50,
+      "entry": [1.5, 0.18],
+      "mid": [0.66, 0.1],
+      "exit": [-1.4, 0.7],
+      "depth": 2.0,
+      "face": [101.5, -28.6, 6.9],
+      "roll": -80,
+      "phase": -0.1
+    },
+
+    {
+      "section": "experience",
+      "model": "/models/lowpoly/space_retro_sputnik.glb",
+      "fit": 0.35,
+      "entry": [-1.5, 0.5],
+      "mid": [-0.64, 0.1],
+      "exit": [1.35, 0.55],
+      "depth": 1.7,
+      "face": [11.5, 202.9, 0],
+      "roll": 180,
+      "phase": -0.315
+    },
+
+    {
+      "section": "contact",
+      "manhole": true,
+      "fit": 0.157,
+      "entry": [1.4, 0.6],
+      "mid": [0.64, 0.1],
+      "exit": [-1.3, 0.7],
+      "depth": 1.8,
+      "face": [78.5, 0, 10.3],
+      "roll": 0,
+      "phase": 0
+    }
+  ]
+}
