@@ -83,16 +83,18 @@ $("#projectGrid").innerHTML = projects.items
 $("#experienceKicker").textContent = experience.kicker;
 $("#experienceHeading").textContent = experience.heading;
 $("#timeline").innerHTML = experience.items
-  .map(
-    (x, i) => `
-  <article class="card xp-card" data-reveal data-reveal-delay="${i % 3}">
+  .map((x, i) => {
+    // body is optional; without it the card collapses to when + role/org
+    const body = x.body ? `<p>${esc(x.body)}</p>` : "";
+    return `
+  <article class="card xp-card${x.body ? "" : " no-body"}" data-reveal data-reveal-delay="${i % 3}">
     <div class="body">
       <span class="idx">${esc(x.when)}</span>
       <div class="meta"><h3>${esc(x.role)}</h3><div class="org">${esc(x.org)}</div></div>
-      <p>${esc(x.body)}</p>
+      ${body}
     </div>
-  </article>`
-  )
+  </article>`;
+  })
   .join("");
 
 // contact (icon button when `icon` matches the set, else a text button)

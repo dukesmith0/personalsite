@@ -353,6 +353,24 @@ p + p {
   margin-top: var(--s-4);
 }
 
+/* Project cards are equal height (grid stretch); make each a column and let the
+   text grow so the tags and the GitHub link snap to the bottom and line up
+   across cards regardless of how long the description is. */
+.projects .card {
+  display: flex;
+  flex-direction: column;
+}
+
+.projects .card .body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.projects .card .tags {
+  margin-top: auto;
+}
+
 .card {
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -455,6 +473,11 @@ p + p {
   gap: var(--s-4);
   align-items: center;
   padding: var(--s-3) var(--s-4);
+}
+
+/* No description: collapse to when + role/org so there's no empty column */
+.xp-card.no-body .body {
+  grid-template-columns: 0.4fr 1fr;
 }
 
 .xp-card h3, .xp-card .org, .xp-card p, .xp-card .idx {
