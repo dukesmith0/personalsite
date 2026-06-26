@@ -1,87 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Duke Smith - Aerospace · Satellite Instrumentation</title>
-<meta name="description" content="Duke Smith - aerospace engineer working on satellite instrumentation. UCLA." />
-<meta name="theme-color" content="#06070d" />
-<!-- All fonts (Josefin Sans / Josefin Slab) are self-hosted via @fontsource -->
-</head>
-<body>
-<canvas id="scene"></canvas>
-<div id="scene-veil"></div>
-<div id="grain" aria-hidden="true"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Duke Smith</title>
+    <meta name="description" content="Duke Smith - aerospace engineer working on satellite instrumentation. UCLA." />
+    <meta name="theme-color" content="#06070d" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- Fonts (Josefin Sans / Josefin Slab) are self-hosted via @fontsource -->
+  </head>
+  <body>
+    <!-- Decorative layers: 3D scene, vignette, film grain -->
+    <canvas id="scene"></canvas>
+    <div id="scene-veil" aria-hidden="true"></div>
+    <div id="grain" aria-hidden="true"></div>
 
-<div id="boot"><div class="b">Initializing flight scene…</div></div>
+    <div id="boot"><div class="b">Initializing flight scene...</div></div>
 
-<header class="topbar">
-  <div class="brand">
-    <div class="name">Duke Smith</div>
-    <div class="role">Aerospace · Satellite Instrumentation</div>
-  </div>
-  <nav class="nav">
-    <a href="#top">Home</a>
-    <a href="#about">About</a>
-    <a href="#projects">Projects</a>
-    <a href="#experience">Experience</a>
-    <a href="#contact">Contact</a>
-  </nav>
-</header>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Home, back to top">
+        <img class="avatar" src="/me.png" alt="Duke Smith" width="40" height="40" />
+        <div class="brand-text">
+          <div class="name">Duke Smith</div>
+          <div class="role">Aerospace · Satellite Instrumentation</div>
+        </div>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#top">Home</a>
+        <a href="#about">About</a>
+        <a href="#projects">Projects</a>
+        <a href="#experience">Experience</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
 
-<main>
-  <!-- HERO -->
-  <section class="hero" id="top">
-    <div class="wrap">
-      <div class="kicker" data-reveal>Aerospace Engineer</div>
-      <h1 data-reveal data-reveal-delay="1">Instruments that <em>fly.</em></h1>
-      <p class="lede" data-reveal data-reveal-delay="2">
-        I design and characterize satellite instrumentation - from propulsion test stands to flight software and sensor calibration.
-      </p>
-    </div>
-    <div class="scroll-hint">SCROLL<span></span></div>
-  </section>
+    <main>
+      <!-- Hero -->
+      <section class="hero" id="top">
+        <div class="wrap">
+          <div class="kicker" data-reveal>Aerospace Engineer</div>
+          <h1 data-reveal data-reveal-delay="1">Instruments that <em>fly.</em></h1>
+          <p class="lede" data-reveal data-reveal-delay="2">
+            I design and characterize satellite instrumentation - from propulsion test stands to flight software and sensor calibration.
+          </p>
+        </div>
+        <div class="scroll-hint" aria-hidden="true">SCROLL<span></span></div>
+      </section>
 
-  <!-- ABOUT -->
-  <section class="about" id="about">
-    <div class="wrap">
-      <div>
-        <div class="kicker" data-reveal>About</div>
-        <h2 data-reveal>From the bench to orbit.</h2>
-        <div id="aboutText" data-reveal data-reveal-delay="1"></div>
-      </div>
-      <div class="portrait" data-reveal data-reveal-delay="2"></div>
-    </div>
-  </section>
+      <!-- About -->
+      <section class="about" id="about">
+        <div class="wrap">
+          <div>
+            <div class="kicker" data-reveal>About</div>
+            <h2 data-reveal>From the bench to orbit.</h2>
+            <div id="aboutText" data-reveal data-reveal-delay="1"></div>
+          </div>
+          <div class="portrait" data-reveal data-reveal-delay="2" aria-hidden="true"></div>
+        </div>
+      </section>
 
-  <!-- PROJECTS -->
-  <section class="projects" id="projects">
-    <div class="wrap">
-      <div class="kicker" data-reveal>Selected Work</div>
-      <h2 data-reveal>Projects</h2>
-      <div class="grid" id="projectGrid"></div>
-    </div>
-  </section>
+      <!-- Projects -->
+      <section class="projects" id="projects">
+        <div class="wrap">
+          <div class="kicker" data-reveal>Selected Work</div>
+          <h2 data-reveal>Projects</h2>
+          <div class="grid" id="projectGrid"></div>
+        </div>
+      </section>
 
-  <!-- EXPERIENCE -->
-  <section class="experience" id="experience">
-    <div class="wrap">
-      <div class="kicker" data-reveal>Trajectory</div>
-      <h2 data-reveal>Experience</h2>
-      <div class="grid" id="timeline"></div>
-    </div>
-  </section>
+      <!-- Experience -->
+      <section class="experience" id="experience">
+        <div class="wrap">
+          <div class="kicker" data-reveal>Trajectory</div>
+          <h2 data-reveal>Experience</h2>
+          <div class="grid" id="timeline"></div>
+        </div>
+      </section>
 
-  <!-- CONTACT -->
-  <section class="contact" id="contact">
-    <div class="wrap">
-      <div class="kicker" data-reveal>Contact</div>
-      <h2 data-reveal>Let's build something<br />that leaves the ground.</h2>
-      <div class="links" id="contactLinks" data-reveal data-reveal-delay="1"></div>
-    </div>
-  </section>
-</main>
+      <!-- Contact -->
+      <section class="contact" id="contact">
+        <div class="wrap">
+          <div class="kicker" data-reveal>Contact</div>
+          <h2 data-reveal>Let's build something<br />that leaves the ground.</h2>
+          <div class="links" id="contactLinks" data-reveal data-reveal-delay="1"></div>
+        </div>
+      </section>
+    </main>
 
-<script type="module" src="/src/main.js"></script>
-</body>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>

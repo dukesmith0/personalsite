@@ -76,6 +76,38 @@ function onScroll({ scroll, limit }) {
 }
 lenis.on("scroll", onScroll);
 
+/* ---------- magnetic dwell at section centroids ----------
+   As you scroll at a steady speed, the page eases to a brief pause when a
+   section's content centroid reaches the viewport center, then releases. Each
+   frame we nudge Lenis's scroll target toward the nearest centroid with a pull
+   that peaks dead center and fades to zero at the zone edge, so a fast scroll
+   overpowers it and only a gentle, near-centered pass actually dwells.
+   Tune feel with `zone` (px of influence each side) and `pull` (0..1 strength). */
+const MAGNET = { zone: 300, pull: 0.09 };
+const magnetEls = reduce
+  ? []
+  : ["#about", "#projects", "#experience"].map((id) => document.querySelector(`${id} .wrap`)).filter(Boolean);
+
+function applyMagnet() {
+  if (!magnetEls.length) return;
+  const s = lenis.animatedScroll;
+  const half = window.innerHeight / 2;
+  let target = null;
+  let nearest = MAGNET.zone;
+  for (const el of magnetEls) {
+    const rect = el.getBoundingClientRect();
+    const center = s + rect.top + rect.height / 2 - half; // scroll position that centers this content
+    const dist = Math.abs(center - s);
+    if (dist < nearest) {
+      nearest = dist;
+      target = center;
+    }
+  }
+  if (target === null) return; // nothing within the magnet zone
+  const w = 1 - nearest / MAGNET.zone; // 0 at the edge -> 1 dead center
+  lenis.targetScroll += (target - lenis.targetScroll) * MAGNET.pull * w * w;
+}
+
 /* ---------- 3D scene: loaded on idle so it never blocks first paint ---------- */
 const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 200));
 idle(() => {
@@ -95,6 +127,7 @@ idle(() => {
 
 function raf(time) {
   lenis.raf(time);
+  applyMagnet();
   requestAnimationFrame(raf);
 }
 requestAnimationFrame(raf);

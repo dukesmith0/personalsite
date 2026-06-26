@@ -3,12 +3,12 @@
    Every component pulls from these so the whole site stays standardized.
    =========================================================================== */
 :root {
-  /* type families */
+  /* Type families */
   --font-display: "Josefin Sans", system-ui, sans-serif;
   --font-body: "Josefin Slab", Georgia, serif;
-  --font-label: "Josefin Sans", system-ui, sans-serif; /* small caps labels */
+  --font-label: "Josefin Sans", system-ui, sans-serif; /* small-caps labels */
 
-  /* type scale (fluid) */
+  /* Type scale (fluid) */
   --t-hero: clamp(2.75rem, 7vw, 6.5rem);
   --t-h2: clamp(1.9rem, 4vw, 3.25rem);
   --t-h3: clamp(1.15rem, 1.6vw, 1.5rem);
@@ -16,19 +16,21 @@
   --t-mono: 0.72rem;
   --t-label: 0.68rem;
 
-  /* color - considered, not default-neon. cool glow + one warm signal accent */
+  /* Color - considered, not default-neon: cool glow plus one warm signal accent */
   --bg: #06070d;
   --bg-elev: #0b0e17;
+  /* Text is white or the accent only; the former grey tints now resolve to
+     white for maximum readability over the moving globe. */
   --ink: #eceef3;
-  --dim: #99a2b2;
-  --faint: #59616f;
+  --dim: #eceef3;
+  --faint: #eceef3;
   --line: rgba(150, 165, 190, 0.12);
   --line-strong: rgba(150, 165, 190, 0.28);
   --glow: #cfe0ea; /* continents / atmosphere - cool near-white */
   --accent: #ff6a3d; /* signal orange - used sparingly */
   --accent-dim: rgba(255, 106, 61, 0.16);
 
-  /* space scale */
+  /* Space scale */
   --s-1: 0.5rem;
   --s-2: 1rem;
   --s-3: 1.5rem;
@@ -38,13 +40,13 @@
   --gutter: clamp(1.5rem, 5vw, 5rem);
   --maxw: 1240px;
 
-  /* motion */
+  /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-1: 0.4s;
   --dur-2: 0.7s;
   --dur-3: 1.1s;
 
-  /* misc */
+  /* Misc */
   --radius: 14px;
 }

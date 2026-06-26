@@ -1,26 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Asset Gallery - Orbital Objects</title>
-<meta name="robots" content="noindex" />
-<link rel="preconnect" href="https://api.fontshare.com" crossorigin />
-</head>
-<body>
-<canvas id="gl"></canvas>
-<div id="labels"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asset Gallery - Orbital Objects</title>
+    <meta name="robots" content="noindex" />
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  </head>
+  <body>
+    <canvas id="gl"></canvas>
+    <div id="labels" aria-hidden="true"></div>
 
-<header class="bar">
-  <div>
-    <h1>Asset Gallery</h1>
-    <div class="sub">Orbital objects - experiment</div>
-  </div>
-  <a href="/">Back to site</a>
-</header>
+    <header class="bar">
+      <div>
+        <h1>Asset Gallery</h1>
+        <div class="sub">Orbital objects - experiment</div>
+      </div>
+      <a href="/">Back to site</a>
+    </header>
 
-<div class="hint">Drag to orbit - scroll to zoom</div>
+    <div class="hint" aria-hidden="true">Drag to orbit - scroll to zoom</div>
 
-<script type="module" src="/src/assetsGallery.js"></script>
-</body>
+    <script type="module" src="/src/assetsGallery.js"></script>
+  </body>
 </html>

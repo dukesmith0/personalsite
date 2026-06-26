@@ -7,8 +7,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import "./styles/assets.css";
-import { createManholeCover, createSolarSail } from "./lib/objects.js";
-import { loadModel, initLoader } from "./lib/loadModel.js";
+import { createManholeCover } from "./lib/objects.js";
+import { loadModel, initLoader, setFlatShading } from "./lib/loadModel.js";
 
 const canvas = document.getElementById("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -80,16 +80,7 @@ items.forEach((it, i) => {
   } else if (it.model) {
     loadModel(it.model, { fit: it.fit })
       .then((obj) => {
-        if (it.flat) {
-          obj.traverse((o) => {
-            if (!o.isMesh || !o.material) return;
-            const mats = Array.isArray(o.material) ? o.material : [o.material];
-            for (const m of mats) {
-              m.flatShading = true;
-              m.needsUpdate = true;
-            }
-          });
-        }
+        if (it.flat) setFlatShading(obj);
         obj.position.copy(it.pos);
         scene.add(obj);
         it.obj = obj;
@@ -114,7 +105,6 @@ resize();
 const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
   const dt = clock.getDelta();
-  const t = clock.elapsedTime;
 
   for (const it of items) {
     if (!it.obj) {
@@ -122,16 +112,6 @@ renderer.setAnimationLoop(() => {
       continue;
     }
     it.obj.rotation.y += (it.obj.userData.spin ?? 0.3) * dt;
-
-    // flame flicker for the booster
-    const flame = it.obj.userData.flame;
-    if (flame) {
-      const f = 0.85 + 0.15 * Math.sin(t * 38) * Math.sin(t * 23) + 0.05 * Math.sin(t * 71);
-      flame.scale.set(1, f, 1);
-      flame.children.forEach((c) => {
-        if (c.material) c.material.opacity = (c.material.userData?.base ?? c.material.opacity) * (0.8 + 0.2 * f);
-      });
-    }
 
     // project a label above each object
     it.anchor.copy(it.obj.position);

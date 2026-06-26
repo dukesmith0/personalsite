@@ -12,7 +12,7 @@
 import * as THREE from "three";
 import { createEarth } from "./earth.js";
 import { createManholeCover } from "./objects.js";
-import { loadModel, initLoader } from "./loadModel.js";
+import { loadModel, initLoader, setFlatShading } from "./loadModel.js";
 import { makeGlowTexture } from "./glow.js";
 import objectConfig from "../objects.config.json";
 
@@ -165,14 +165,7 @@ export class Globe3D {
       } else {
         loadModel(cfg.model, { fit: cfg.fit })
           .then((obj) => {
-            obj.traverse((o) => {
-              if (!o.isMesh || !o.material) return;
-              const mats = Array.isArray(o.material) ? o.material : [o.material];
-              for (const m of mats) {
-                m.flatShading = true; // crisp low-poly facets
-                m.needsUpdate = true;
-              }
-            });
+            setFlatShading(obj);
             obj.visible = false;
             this.crafts[i] = obj;
             this.scene.add(obj);

@@ -20,6 +20,18 @@ export function initLoader(renderer) {
   loader.setKTX2Loader(ktx2);
 }
 
+// Force crisp low-poly facets on every mesh material in a loaded model.
+export function setFlatShading(obj) {
+  obj.traverse((o) => {
+    if (!o.isMesh || !o.material) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) {
+      m.flatShading = true;
+      m.needsUpdate = true;
+    }
+  });
+}
+
 export function loadModel(url, { fit = 2 } = {}) {
   return new Promise((resolve, reject) => {
     loader.load(
