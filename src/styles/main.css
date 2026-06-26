@@ -187,13 +187,12 @@ p + p { margin-top: var(--s-2); }
 .contact .wrap { text-align: center; display: grid; justify-items: center; }
 .contact h2 { font-size: var(--t-hero); }
 .contact .links { display: flex; flex-wrap: wrap; gap: var(--s-3); justify-content: center; margin-top: var(--s-4); }
-.contact .links a {
-  font-family: var(--font-label); font-size: var(--t-mono); letter-spacing: 0.12em; text-transform: uppercase;
-  border: 1px solid var(--line); border-radius: 999px; padding: 0.9em 1.6em; transition: all var(--dur-1) var(--ease-out);
+.contact .links a.icon {
+  display: grid; place-items: center; width: 3.4rem; height: 3.4rem; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 999px; transition: all var(--dur-1) var(--ease-out);
 }
-.contact .links a:hover { border-color: var(--accent); color: var(--accent); }
-.contact .links a.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.contact .links a.primary:hover { color: #fff; filter: brightness(1.08); }
+.contact .links a.icon svg { width: 1.45rem; height: 1.45rem; display: block; }
+.contact .links a.icon:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-3px); }
 
 /* ---------- scroll reveal ---------- */
 [data-reveal] { opacity: 0; transform: translateY(26px); transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out); }

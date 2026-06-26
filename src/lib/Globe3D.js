@@ -325,8 +325,12 @@ export class Globe3D {
       }
     }
 
-    // single damping stage (Lenis already smooths scroll, do not double filter)
-    this.eased += (this.progress - this.eased) * 0.2;
+    // Track the (already Lenis-smoothed) scroll exactly. A second low-pass here
+    // would lag the target, and the lag flips sign with scroll direction, so the
+    // same scroll position would render differently going up vs down. Tracking
+    // 1:1 keeps the objects' positions direction-symmetric. The idle camera
+    // float below is time-based, so it still breathes when the scroll is still.
+    this.eased = this.progress;
 
     // camera from scroll keyframes + a subtle perpetual float (handheld feel)
     const [r, polar, az] = sample(KEYS, this.eased);
