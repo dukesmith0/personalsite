@@ -7,6 +7,9 @@ dist/
 # local backups / scratch
 .backup/
 
+# local-only project guidance for Claude
+CLAUDE.md
+
 # editor / OS
 .vscode/
 .idea/
