@@ -19,10 +19,10 @@
 
     <header class="topbar">
       <a class="brand" href="#top" aria-label="Home, back to top">
-        <img class="avatar" src="/me.png" alt="Duke Smith" width="40" height="40" />
+        <img class="avatar" id="brandAvatar" src="/me.png" alt="" width="40" height="40" />
         <div class="brand-text">
-          <div class="name">Duke Smith</div>
-          <div class="role">Aerospace · Satellite Instrumentation</div>
+          <div class="name" id="brandName"></div>
+          <div class="role" id="brandRole"></div>
         </div>
       </a>
       <nav class="nav" aria-label="Primary">
@@ -38,11 +38,9 @@
       <!-- Hero -->
       <section class="hero" id="top">
         <div class="wrap">
-          <div class="kicker" data-reveal>Aerospace Engineer</div>
-          <h1 data-reveal data-reveal-delay="1">Instruments that <em>fly.</em></h1>
-          <p class="lede" data-reveal data-reveal-delay="2">
-            I design and characterize satellite instrumentation - from propulsion test stands to flight software and sensor calibration.
-          </p>
+          <div class="kicker" id="heroKicker" data-reveal></div>
+          <h1 id="heroTitle" data-reveal data-reveal-delay="1"></h1>
+          <p class="lede" id="heroLede" data-reveal data-reveal-delay="2"></p>
         </div>
         <div class="scroll-hint" aria-hidden="true">SCROLL<span></span></div>
       </section>
@@ -51,19 +49,19 @@
       <section class="about" id="about">
         <div class="wrap">
           <div>
-            <div class="kicker" data-reveal>About</div>
-            <h2 data-reveal>From the bench to orbit.</h2>
+            <div class="kicker" id="aboutKicker" data-reveal></div>
+            <h2 id="aboutHeading" data-reveal></h2>
             <div id="aboutText" data-reveal data-reveal-delay="1"></div>
           </div>
-          <div class="portrait" data-reveal data-reveal-delay="2" aria-hidden="true"></div>
+          <div class="portrait" id="aboutPortrait" data-reveal data-reveal-delay="2" aria-hidden="true"></div>
         </div>
       </section>
 
       <!-- Projects -->
       <section class="projects" id="projects">
         <div class="wrap">
-          <div class="kicker" data-reveal>Selected Work</div>
-          <h2 data-reveal>Projects</h2>
+          <div class="kicker" id="projectsKicker" data-reveal></div>
+          <h2 id="projectsHeading" data-reveal></h2>
           <div class="grid" id="projectGrid"></div>
         </div>
       </section>
@@ -71,8 +69,8 @@
       <!-- Experience -->
       <section class="experience" id="experience">
         <div class="wrap">
-          <div class="kicker" data-reveal>Trajectory</div>
-          <h2 data-reveal>Experience</h2>
+          <div class="kicker" id="experienceKicker" data-reveal></div>
+          <h2 id="experienceHeading" data-reveal></h2>
           <div class="grid" id="timeline"></div>
         </div>
       </section>
@@ -80,8 +78,8 @@
       <!-- Contact -->
       <section class="contact" id="contact">
         <div class="wrap">
-          <div class="kicker" data-reveal>Contact</div>
-          <h2 data-reveal>Let's build something<br />that leaves the ground.</h2>
+          <div class="kicker" id="contactKicker" data-reveal></div>
+          <h2 id="contactHeading" data-reveal></h2>
           <div class="links" id="contactLinks" data-reveal data-reveal-delay="1"></div>
         </div>
       </section>

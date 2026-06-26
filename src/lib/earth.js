@@ -125,7 +125,6 @@ export function createEarth({ radius = 1, glow = "#cfe0ea" } = {}) {
   group.add(graticule(radius * 1.001, new THREE.Color(glow)));
   group.add(coast);
   group.add(atmosphere(radius, glow));
-  group.userData.surface = surface;
   // exposed so the renderer can keep the fat-line resolution in sync on resize
   group.userData.coastMaterial = coast.material;
   return group;

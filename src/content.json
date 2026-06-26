@@ -1,0 +1,100 @@
+{
+  "_readme": [
+    "All page copy, images, and buttons live here. Edit this file (then rebuild, or just save while `npm run dev` runs) to change any text, add projects or experience entries, swap images, or edit buttons and links.",
+    "profile = top-left brand (photo, name, subtitle). Nav menu links are structural and stay in index.html.",
+    "Image paths point into /public (e.g. /me.png, /images/foo.jpg). Leave an image \"\" to show the placeholder.",
+    "Buttons: 'icon' may be email | github | linkedin (drawn as an SVG icon) or omitted for a plain text button. 'href' starting with http opens in a new tab."
+  ],
+  "profile": {
+    "name": "Duke Smith",
+    "role": "Aerospace · Satellite Instrumentation",
+    "avatar": "/me.png"
+  },
+  "hero": {
+    "kicker": "Aerospace Engineer",
+    "title": "Instruments that",
+    "em": "fly.",
+    "lede": "I design and characterize satellite instrumentation - from propulsion test stands to flight software and sensor calibration."
+  },
+  "about": {
+    "kicker": "About",
+    "heading": "From the bench to orbit.",
+    "portrait": "",
+    "paragraphs": [
+      "I'm an aerospace engineer working on satellite instrumentation. I came up through hands-on maintenance, which is where I learned how real hardware actually fails - and now I build and characterize the instruments that fly.",
+      "My work lives at the seam between mechanical hardware and the signal chains that measure it: propulsion test stands, CubeSat flight software, and flight-instrument bring-up."
+    ]
+  },
+  "projects": {
+    "kicker": "Selected Work",
+    "heading": "Projects",
+    "items": [
+      {
+        "title": "Bi-Propellant Engine Test Stand",
+        "body": "Designed and instrumented a 500 lbf liquid engine test stand - feed system, load cells, and a real-time data pipeline capturing chamber pressure at 2 kHz.",
+        "tags": ["LOX / Kerosene", "Instrumentation", "CAD"],
+        "image": "",
+        "link": null
+      },
+      {
+        "title": "CubeSat Attitude Control",
+        "body": "Wrote flight software for a 3U CubeSat ADCS - reaction-wheel control, sun-pointing mode, and a Kalman filter fusing magnetometer and gyro data.",
+        "tags": ["Embedded C", "Kalman Filter", "Flight SW"],
+        "image": "",
+        "link": null
+      },
+      {
+        "title": "Satellite Instrument Bring-Up",
+        "body": "Current work: bench characterization and calibration of flight instrumentation - signal chains, sensor integration, and test automation.",
+        "tags": ["Sensors", "Calibration", "Test Automation"],
+        "image": "",
+        "link": null
+      }
+    ]
+  },
+  "experience": {
+    "kicker": "Trajectory",
+    "heading": "Experience",
+    "items": [
+      {
+        "when": "Now",
+        "role": "Instrumentation Engineer",
+        "org": "Satellite Instrumentation",
+        "body": "Building and characterizing flight instrumentation - sensor integration and calibration for spaceflight hardware."
+      },
+      {
+        "when": "Recent",
+        "role": "Test Engineer",
+        "org": "Propulsion Test",
+        "body": "Stood up engine test campaigns - feed systems, load cells, and high-rate data capture for hot-fire validation."
+      },
+      {
+        "when": "Earlier",
+        "role": "Maintenance Technician",
+        "org": "Maintenance",
+        "body": "Hands-on maintenance and troubleshooting of complex hardware - the practical foundation behind the work."
+      },
+      {
+        "when": "Internship",
+        "role": "Engineering Intern",
+        "org": "Aerospace R&D",
+        "body": "Prototyped avionics and bench fixtures - first exposure to flight hardware bring-up and lab automation."
+      },
+      {
+        "when": "Education",
+        "role": "Aerospace Engineering",
+        "org": "UCLA",
+        "body": "Propulsion, controls, and flight software - from engine test stands to CubeSat attitude determination."
+      }
+    ]
+  },
+  "contact": {
+    "kicker": "Contact",
+    "heading": ["Let's build something", "that leaves the ground."],
+    "links": [
+      { "label": "Email", "icon": "email", "href": "mailto:craigdukesmith@gmail.com" },
+      { "label": "GitHub", "icon": "github", "href": "https://github.com/" },
+      { "label": "LinkedIn", "icon": "linkedin", "href": "https://www.linkedin.com/" }
+    ]
+  }
+}

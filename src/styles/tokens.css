@@ -16,11 +16,11 @@
   --t-mono: 0.72rem;
   --t-label: 0.68rem;
 
-  /* Color - considered, not default-neon: cool glow plus one warm signal accent */
+  /* Color - considered, not default-neon: cool glow plus one warm signal accent.
+     Text is white or the accent only; the former grey tints (--dim, --faint)
+     now resolve to white for maximum readability over the moving globe. */
   --bg: #06070d;
   --bg-elev: #0b0e17;
-  /* Text is white or the accent only; the former grey tints now resolve to
-     white for maximum readability over the moving globe. */
   --ink: #eceef3;
   --dim: #eceef3;
   --faint: #eceef3;

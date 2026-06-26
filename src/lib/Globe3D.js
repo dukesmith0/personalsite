@@ -39,8 +39,10 @@ const DEG = Math.PI / 180;
 const SECTIONS = objectConfig.sections.map((s) => {
   if (!s.model && !s.manhole) return null; // hero / no object
   return {
+    section: s.section,
     model: s.model,
     manhole: !!s.manhole,
+    side: s.side || null, // "left"/"right" => gap-sweep; otherwise the fixed path below
     fit: s.fit,
     entry: s.entry,
     mid: s.mid,
@@ -51,6 +53,16 @@ const SECTIONS = objectConfig.sections.map((s) => {
     phase: s.phase || 0,
   };
 });
+
+// Gap-sweep tuning. A "side" object rides centered in the empty gap between the
+// screen edge and the section content. d = how far the content center is from
+// the viewport center, in viewport heights (0 = centered / dwell).
+//   dwell = half-window (viewport heights) where it parks in the gap
+//   range = scroll distance over which it sweeps between the gap and an edge
+//   edge  = off-screen NDC x it enters from / exits to
+//   vert  = NDC y of the object (slightly above center)
+//   gap   = 0..1 across the side gap (0.5 = midpoint of edge and content)
+const SWEEP = { dwell: 0.13, range: 0.5, edge: 1.4, vert: 0.12, gap: 0.5 };
 
 const EARTH_SPIN = Math.PI * 2 * 1.25; // ~1.25 turns of Earth across the page
 
@@ -174,6 +186,13 @@ export class Globe3D {
       }
     });
 
+    // For gap-sweep objects, grab the section's content box so placement can
+    // follow the real layout (the object sits in the gap beside this element).
+    this.sweepEls = {};
+    SECTIONS.forEach((cfg, i) => {
+      if (cfg && cfg.side) this.sweepEls[i] = document.querySelector(`#${cfg.section} .wrap`);
+    });
+
     // parallax starfield (sparse; fog disabled so distant stars stay visible)
     const N = 360;
     const arr = new Float32Array(N * 3);
@@ -230,48 +249,82 @@ export class Globe3D {
     this.progress = Math.max(0, Math.min(1, p));
   }
 
-  _placeSatellite(p) {
+  // Place each object for the current scroll. Gap-sweep objects (cfg.side) are
+  // driven by their section's real on-screen box; the manhole keeps the older
+  // fixed NDC path.
+  _placeObjects(p) {
     const segs = SECTIONS.length;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
-    // Each object owns a phase-shifted local time lt = (scroll within its
-    // section) + phase, and is visible only while its on-screen pass runs
-    // (0 < lt < 1). Gating on lt rather than the integer scroll bucket means the
-    // object always completes its entry -> exit (off-frame) before vanishing,
-    // even with a large +/- phase. Neighbours may briefly overlap off-frame
-    // during the hand-off, which reads as moving between objects.
     for (let i = 0; i < segs; i++) {
       const cfg = SECTIONS[i];
       const sat = cfg ? this.crafts[i] : null;
       if (!sat) continue; // hero, or model still loading
+
+      if (cfg.side) {
+        // Gap sweep: the object rides in the empty side gap and follows the
+        // section. d = content-center offset from viewport center, in viewport
+        // heights (0 = section centered = dwell in the gap).
+        const el = this.sweepEls[i];
+        if (!el) {
+          sat.visible = false;
+          continue;
+        }
+        const rect = el.getBoundingClientRect();
+        const d = (rect.top + rect.height / 2 - vh / 2) / vh;
+        if (Math.abs(d) >= SWEEP.dwell + SWEEP.range) {
+          sat.visible = false; // section too far from center: object is off-frame
+          continue;
+        }
+        sat.visible = true;
+
+        const left = cfg.side === "left";
+        // centroid in the gap: gap=0.5 is the midpoint of screen edge and content
+        const gapPx = left ? rect.left * SWEEP.gap : vw - (vw - rect.right) * SWEEP.gap;
+        const dwellX = (gapPx / vw) * 2 - 1;
+        const enterEdge = left ? -SWEEP.edge : SWEEP.edge; // sweeps in from this side
+        const exitEdge = left ? SWEEP.edge : -SWEEP.edge; // sweeps across to the far side
+
+        let nx = dwellX; // dwell while |d| <= dwell window
+        if (d > SWEEP.dwell) {
+          // section still below center (approaching): sweep in from the near edge
+          nx = lerp(dwellX, enterEdge, smoothstep(Math.min(1, (d - SWEEP.dwell) / SWEEP.range)));
+        } else if (d < -SWEEP.dwell) {
+          // section scrolled above center (leaving): sweep across to the far edge
+          nx = lerp(dwellX, exitEdge, smoothstep(Math.min(1, (-d - SWEEP.dwell) / SWEEP.range)));
+        }
+        this._place(sat, cfg, nx, SWEEP.vert, -d * 0.5);
+        continue;
+      }
+
+      // Manhole / fixed-path object: phase-shifted local time, visible only while
+      // its pass runs (0 < lt < 1) so it completes entry -> exit off-frame.
       const lt = p * segs - i + (cfg.phase || 0);
       if (lt <= 0 || lt >= 1) {
         sat.visible = false;
         continue;
       }
       sat.visible = true;
-
-      // Screen anchor: NDC point along the parked path, unprojected to a world
-      // point at the section's depth in front of the camera.
       const [ax, ay] = pathPoint(cfg, lt);
-      this._satV.set(ax, ay, 0.5).unproject(this.camera);
-      this._satV.sub(this.camera.position).normalize().multiplyScalar(cfg.depth).add(this.camera.position);
-      sat.position.copy(this._satV);
+      this._place(sat, cfg, ax, ay, (lt - 0.5) * 0.42);
+    }
+  }
 
-      // Orient relative to the screen (align to the camera, then apply the fixed
-      // per-object facing). No perpetual spin, but a small scroll-driven yaw
-      // (+/- ~0.2 rad across the pass) gives it life as you scroll.
-      sat.quaternion.copy(this.camera.quaternion);
-      sat.rotateX(cfg.face[0]);
-      sat.rotateY(cfg.face[1] + (lt - 0.5) * 0.42);
-      sat.rotateZ(cfg.face[2]);
+  // Put `sat` at screen NDC (nx, ny) at its section depth, aligned to the camera
+  // with its configured tilt plus a little scroll-driven yaw for life.
+  _place(sat, cfg, nx, ny, yawExtra) {
+    this._satV.set(nx, ny, 0.5).unproject(this.camera);
+    this._satV.sub(this.camera.position).normalize().multiplyScalar(cfg.depth).add(this.camera.position);
+    sat.position.copy(this._satV);
 
-      // Optional screen-plane roll about the view axis: spins the silhouette
-      // (e.g. to point the nose a particular way) without changing which faces
-      // point at the camera, so the chosen tilt is preserved.
-      if (cfg.roll) {
-        this._viewAxis.copy(this.camera.position).normalize();
-        sat.rotateOnWorldAxis(this._viewAxis, cfg.roll);
-      }
+    sat.quaternion.copy(this.camera.quaternion);
+    sat.rotateX(cfg.face[0]);
+    sat.rotateY(cfg.face[1] + yawExtra);
+    sat.rotateZ(cfg.face[2]);
+    if (cfg.roll) {
+      this._viewAxis.copy(this.camera.position).normalize();
+      sat.rotateOnWorldAxis(this._viewAxis, cfg.roll);
     }
   }
 
@@ -343,7 +396,7 @@ export class Globe3D {
     this.earth.rotation.y = this.eased * EARTH_SPIN + time * 0.000015;
     this.stars.rotation.y += 0.00008;
 
-    this._placeSatellite(this.eased);
+    this._placeObjects(this.eased);
 
     this.renderer.render(this.scene, this.camera);
   }
